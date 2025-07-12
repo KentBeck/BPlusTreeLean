@@ -155,7 +155,12 @@ end
 theorem minKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
   -- wellFormed needed for leafSorted and keyRangesValid properties
   minKeyInSubtree node = some k → ∀ k' ∈ allKeysInSubtree node, k ≤ k' := by
-  -- TODO: Complete after wellFormed proofs are established
+  intro h_min k' h_k'_in
+  -- This proof requires:
+  -- 1. For leaf nodes: leafSorted to show first key ≤ all other keys
+  -- 2. For internal nodes: keyRangesValid + mutual induction on minKeyInChildren
+  -- 3. The proper wellFormed assumptions to access these invariants
+  -- The structure is correct but needs the full wellFormed context
   sorry
 
 -- Property: maxKeyInSubtree returns actual maximum key (DEFERRED)
@@ -397,6 +402,7 @@ def insertIntoNodeSafe (node : BPlusNode K V order)
         have h_find_bound : findChildIndex keys key ≤ keys.length := by
           -- Prove that findChildIndex always returns ≤ keys.length
           -- This follows from the structure of the recursive function
+          -- For now, this is a fundamental property that should hold
           sorry
         -- From internalWellFormed: children.length = keys.length + 1
         have h_struct : children.length = keys.length + 1 := by
