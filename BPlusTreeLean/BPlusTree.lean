@@ -30,6 +30,18 @@ variable {K V : Type} [LT K] [LE K] [DecidableRel (α := K) (· < ·)] [Decidabl
 -- Invariant: minimum order must be at least 3
 def validOrder (order : Nat) : Prop := order ≥ 3
 
+-- Simple lemma: validOrder implies order > 0
+theorem validOrder_pos (order : Nat) : validOrder order → order > 0 := by
+  intro h
+  unfold validOrder at h
+  omega
+
+-- Simple lemma: validOrder implies order ≥ 2 (useful for min calculations)
+theorem validOrder_ge_two (order : Nat) : validOrder order → order ≥ 2 := by
+  intro h
+  unfold validOrder at h
+  omega
+
 -- Invariant: internal nodes have between ⌈order/2⌉ and order children
 def validInternalNodeSize {α : Type} (children : List α) (order : Nat) : Prop :=
   let minChildren := (order + 1) / 2
@@ -328,9 +340,20 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
   | internal keys children =>
     -- For internal nodes, keyRangesValid gives us the separator properties
     simp [isChildOf] at h_child
-    -- Child is in children list, and keyRangesValid ensures proper key separation
-    -- This means child's key range must be contained within parent's range
-    -- The detailed proof requires showing min/max relationships
+    -- h_child : child ∈ children
+    -- keyRangesValid gives us proper separation between children by separator keys
+    -- keySpan child should be bounded by the separator keys adjacent to it
+    
+    -- From keyRangesValid, we know:
+    -- children.length = keys.length + 1 and proper key separation exists
+    unfold keyRangesValid at h_key_ranges
+    simp at h_key_ranges
+    obtain ⟨h_struct, h_separation⟩ := h_key_ranges
+    
+    -- The proof requires finding the position of child in children
+    -- and using the separation property to bound child's key span
+    -- by adjacent separator keys. This ensures child span ⊆ parent span.
+    -- However, this requires additional lemmas about min/max and list positions
     sorry
 
 -- Note: The key span insight suggests we should prove termination based on
@@ -374,9 +397,10 @@ decreasing_by
   -- Tree navigation terminates when we reach leaves
   simp_wf
   -- The child node has smaller sizeOf than the parent internal node
-  -- This requires proving that elements of a list have smaller sizeOf than the list
-  -- For now, this is a fundamental property of inductive data structures
-  sorry
+  -- This is a fundamental property: elements of a list have smaller sizeOf
+  -- In Lean, this should be provable with the right lemmas
+  -- For now, using the fact that children.get! childIndex is structurally smaller
+  sorry -- TODO: This should be provable with List.sizeOf_lt_of_mem type lemmas
 
 -- Phase 2: Search within a fixed-length leaf (simple iteration)
 def searchInLeaf (entries : List (KeyValue K V)) (key : K) : Option V :=
