@@ -57,11 +57,16 @@ theorem validInternalNodeSize_nonempty {α : Type} (children : List α) (order :
   validOrder order → validInternalNodeSize children order → children.length > 0 := by
   intro h_order h_valid
   unfold validInternalNodeSize at h_valid
+  unfold validOrder at h_order
   -- h_valid gives us: children.length ≥ (order + 1) / 2 ∧ children.length ≤ order
-  -- Since validOrder means order ≥ 3, we have (order + 1) / 2 ≥ 2
-  -- So children.length ≥ 2 > 0
-  -- This should be provable with more careful arithmetic about division
-  sorry
+  -- h_order gives us: order ≥ 3
+  obtain ⟨h_min, h_max⟩ := h_valid
+  -- Since order ≥ 3, we have (order + 1) / 2 ≥ (3 + 1) / 2 = 2
+  have h_bound : (order + 1) / 2 ≥ 2 := by
+    -- order ≥ 3 implies order + 1 ≥ 4, which implies (order + 1) / 2 ≥ 2
+    omega
+  -- Therefore children.length ≥ 2 > 0
+  omega
 
 -- Invariant: keys in leaf nodes are sorted
 def leafSorted (entries : List (KeyValue K V)) : Prop :=
