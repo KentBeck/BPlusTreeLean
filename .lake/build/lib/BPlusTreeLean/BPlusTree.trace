@@ -15,18 +15,6 @@
    "././././BPlusTreeLean/BPlusTree.lean:175:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:189:23: unused variable `keys`\nnote: this linter can be disabled with `set_option linter.unusedVariables false`",
-   "level": "warning"},
-  {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:189:28: unused variable `children`\nnote: this linter can be disabled with `set_option linter.unusedVariables false`",
-   "level": "warning"},
-  {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:203:20: unused variable `keys`\nnote: this linter can be disabled with `set_option linter.unusedVariables false`",
-   "level": "warning"},
-  {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:203:36: unused variable `key`\nnote: this linter can be disabled with `set_option linter.unusedVariables false`",
-   "level": "warning"},
-  {"message":
    "././././BPlusTreeLean/BPlusTree.lean:206:4: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
@@ -59,4 +47,4 @@
   {"message":
    "././././BPlusTreeLean/BPlusTree.lean:339:8: declaration uses 'sorry'",
    "level": "warning"}],
- "depHash": "1199312459482808850"}
+ "depHash": "17239652268487502923"}

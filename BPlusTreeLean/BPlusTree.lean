@@ -167,9 +167,19 @@ theorem maxKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
 -- Property: minKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
 theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   minKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
-  -- This proof requires mutual induction which is complex
-  -- For now, we establish the key structural relationship
-  sorry
+  -- This proof works by case analysis on the node structure
+  cases node with
+  | leaf entries =>
+    cases entries with
+    | nil => 
+      simp [minKeyInSubtree, allKeysInSubtree]
+    | cons kv rest =>
+      simp [minKeyInSubtree, allKeysInSubtree]
+  | internal keys children =>
+    simp [minKeyInSubtree, allKeysInSubtree]
+    -- For internal nodes, this requires proving the relationship for children
+    -- This needs mutual induction on the children structure
+    sorry
 
 -- Property: maxKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
 theorem maxKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
@@ -186,7 +196,7 @@ def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Optio
 -- Helper: key ranges properly maintained with sibling ordering using min/max
 def keyRangesValid : BPlusNode K V order → Prop
   | BPlusNode.leaf _ => True
-  | BPlusNode.internal keys children => True  -- Simplified for now
+  | BPlusNode.internal _ _ => True  -- Simplified for now
 
 -- Complete well-formed B+ Tree predicate
 def wellFormed (tree : BPlusTree K V order) : Prop :=
@@ -199,8 +209,15 @@ def wellFormed (tree : BPlusTree K V order) : Prop :=
 
 -- Basic operations (specifications)
 
--- Helper function
-def findChildIndex (keys : List K) (key : K) : Nat := 0
+-- Helper function: find the index of the child to navigate to
+def findChildIndex (keys : List K) (key : K) : Nat :=
+  let rec go (idx : Nat) (remaining : List K) : Nat :=
+    match remaining with
+    | [] => idx
+    | k :: rest => 
+        if key < k then idx
+        else go (idx + 1) rest
+  go 0 keys
 
 -- Phase 1: Navigate to the appropriate leaf
 def findLeafForKey : BPlusNode K V order → K → List (KeyValue K V)
@@ -213,6 +230,7 @@ termination_by node => sizeOf node
 decreasing_by 
   -- Tree navigation terminates when we reach leaves
   simp_wf
+  -- The child node has smaller sizeOf than the parent internal node
   sorry
 
 -- Phase 2: Search within a fixed-length leaf (simple iteration)
@@ -224,7 +242,7 @@ def searchInLeaf (entries : List (KeyValue K V)) (key : K) : Option V :=
 theorem searchInLeaf_correct (entries : List (KeyValue K V)) (key : K) (v : V) :
   searchInLeaf entries key = some v ↔ ⟨key, v⟩ ∈ entries := by
   simp [searchInLeaf]
-  -- For now, this is straightforward from List.find? properties
+  -- This follows from List.find? and Option.map properties
   sorry
 
 theorem searchInLeaf_none_iff (entries : List (KeyValue K V)) (key : K) :
@@ -296,7 +314,9 @@ def insertIntoNodeSafe (node : BPlusNode K V order)
       have h_bounds : childIndex < children.length := by
         -- findChildIndex returns ≤ keys.length
         have h_find_bound : findChildIndex keys key ≤ keys.length := by
-          sorry -- Need to prove bounds for findChildIndex
+          -- Prove that findChildIndex always returns ≤ keys.length
+          -- This follows from the structure of the recursive function
+          sorry
         -- From internalWellFormed: children.length = keys.length + 1
         have h_struct : children.length = keys.length + 1 := by
           -- Extract from internalWellFormed 
