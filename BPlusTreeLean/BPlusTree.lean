@@ -12,6 +12,10 @@ inductive BPlusNode (K V : Type) (order : Nat) where
   | leaf : List (KeyValue K V) → BPlusNode K V order
   | internal : List K → List (BPlusNode K V order) → BPlusNode K V order
 
+-- Make BPlusNode inhabitable
+instance : Inhabited (BPlusNode K V order) where
+  default := BPlusNode.leaf []
+
 -- B+ Tree structure
 structure BPlusTree (K V : Type) (order : Nat) where
   root : BPlusNode K V order
@@ -70,15 +74,39 @@ def allLeavesAtDepth : BPlusNode K V order → Nat → Prop
   | BPlusNode.internal _ children, depth + 1 => 
       ∀ child ∈ children, allLeavesAtDepth child depth
 
--- Helper functions for key range validation
-def minKeyInSubtree : BPlusNode K V order → Option K := sorry
-def maxKeyInSubtree : BPlusNode K V order → Option K := sorry
+-- Helper: simple depth measure for termination (non-recursive)
+def treeDepth : BPlusNode K V order → Nat
+  | BPlusNode.leaf _ => 0
+  | BPlusNode.internal _ children => 1 + children.length
 
--- Helper: key ranges properly maintained (simplified for now)
+-- Helper: extract all keys from a subtree  
+def allKeysInSubtree : BPlusNode K V order → List K
+  | BPlusNode.leaf entries => entries.map (·.key)
+  | BPlusNode.internal keys children => 
+      keys ++ (children.bind allKeysInSubtree)
+termination_by node => sizeOf node
+decreasing_by 
+  -- For provably correct implementation: child ∈ children → sizeOf child < sizeOf parent
+  -- This requires the structural ordering lemma for inductive constructors
+  -- Proof: List.sizeOf_lt_of_mem + constructor size properties
+  sorry
+
+-- Helper: check if node's keys are within given bounds
+def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Option K) : Prop :=
+  ∀ k ∈ allKeysInSubtree node,
+    (lower_bound.isNone ∨ lower_bound.get! < k) ∧
+    (upper_bound.isNone ∨ k < upper_bound.get!)
+
+-- Helper: key ranges properly maintained with sibling ordering
 def keyRangesValid : BPlusNode K V order → Prop
   | BPlusNode.leaf _ => True
-  | BPlusNode.internal _ children => 
-      -- Recursively check all children have valid key ranges
+  | BPlusNode.internal keys children =>
+      -- Each child respects its key range bounds relative to siblings
+      nodeInKeyRange (children.get! 0) none (some (keys.get! 0)) ∧
+      (∀ i, 0 < i ∧ i < keys.length → 
+        nodeInKeyRange (children.get! i) (some (keys.get! (i-1))) (some (keys.get! i))) ∧
+      nodeInKeyRange (children.get! keys.length) (some (keys.getLast!)) none ∧
+      -- Recursively check children
       ∀ child ∈ children, keyRangesValid child
 
 -- Complete well-formed B+ Tree predicate
