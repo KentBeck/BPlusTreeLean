@@ -74,22 +74,28 @@ def allLeavesAtDepth : BPlusNode K V order → Nat → Prop
   | BPlusNode.internal _ children, depth + 1 => 
       ∀ child ∈ children, allLeavesAtDepth child depth
 
--- Helper: simple depth measure for termination (non-recursive)
-def treeDepth : BPlusNode K V order → Nat
-  | BPlusNode.leaf _ => 0
-  | BPlusNode.internal _ children => 1 + children.length
+-- ✅ HEIGHT-BASED TERMINATION: Much cleaner approach!
+-- Key insight: Tree height decreases monotonically, we always reach leaves
 
--- Helper: extract all keys from a subtree  
-def allKeysInSubtree : BPlusNode K V order → List K
-  | BPlusNode.leaf entries => entries.map (·.key)
-  | BPlusNode.internal keys children => 
-      keys ++ (children.bind allKeysInSubtree)
-termination_by node => sizeOf node
-decreasing_by 
-  -- For provably correct implementation: child ∈ children → sizeOf child < sizeOf parent
-  -- This requires the structural ordering lemma for inductive constructors
-  -- Proof: List.sizeOf_lt_of_mem + constructor size properties
-  sorry
+mutual
+  -- Extract all keys using height-based termination  
+  def allKeysInSubtree : BPlusNode K V order → List K
+    | BPlusNode.leaf entries => entries.map (·.key)
+    | BPlusNode.internal keys children => 
+        keys ++ allKeysInChildren children
+  
+  -- Process children list (each child has height < parent)
+  def allKeysInChildren : List (BPlusNode K V order) → List K
+    | [] => []
+    | child :: rest => allKeysInSubtree child ++ allKeysInChildren rest
+end
+
+-- Termination proof by well-founded recursion on tree structure:
+-- 1. allKeysInSubtree(internal) → allKeysInChildren(children_list)  
+-- 2. allKeysInChildren(child::rest) → allKeysInSubtree(child) + allKeysInChildren(rest)
+-- 3. child has structurally smaller size than parent internal node
+-- 4. rest has smaller length than original list
+-- 5. Eventually reach leaves and empty lists → terminate
 
 -- Helper: check if node's keys are within given bounds
 def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Option K) : Prop :=
