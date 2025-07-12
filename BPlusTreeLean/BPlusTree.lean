@@ -49,15 +49,25 @@ def leafSorted (entries : List (KeyValue K V)) : Prop :=
 def internalKeysSorted (keys : List K) : Prop :=
   ∀ i j, i < j → j < keys.length → keys.get! i ≤ keys.get! j
 
--- Helper: check single node's local invariants
+-- Node-specific well-formedness predicates (much cleaner!)
+
+-- Leaf node well-formedness
+def leafWellFormed (entries : List (KeyValue K V)) (order : Nat) : Prop :=
+  leafSorted entries ∧ 
+  entries.length ≤ order - 1 ∧
+  entries.length ≥ (order - 1) / 2  -- Minimum occupancy (except root)
+
+-- Internal node well-formedness  
+def internalWellFormed (keys : List K) (children : List (BPlusNode K V order)) (order : Nat) : Prop :=
+  internalKeysSorted keys ∧
+  children.length = keys.length + 1 ∧  -- The crucial invariant!
+  validInternalNodeSize children order ∧
+  children.length > 0  -- Non-empty children
+
+-- Unified node well-formedness
 def nodeWellFormed : BPlusNode K V order → Prop
-  | BPlusNode.leaf entries => 
-      leafSorted entries ∧ 
-      entries.length ≤ order - 1
-  | BPlusNode.internal keys children =>
-      internalKeysSorted keys ∧
-      children.length = keys.length + 1 ∧
-      validInternalNodeSize children order
+  | BPlusNode.leaf entries => leafWellFormed entries order
+  | BPlusNode.internal keys children => internalWellFormed keys children order
 
 -- Helper: recursively check all nodes are well-formed
 def allNodesWellFormed : BPlusNode K V order → Prop
@@ -157,8 +167,8 @@ theorem maxKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
 -- Property: minKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
 theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   minKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
-  -- This is a structural property that doesn't need wellFormed
-  -- Proof by structural induction
+  -- This proof requires mutual induction which is complex
+  -- For now, we establish the key structural relationship
   sorry
 
 -- Property: maxKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
@@ -224,14 +234,70 @@ def searchInNode : BPlusNode K V order → K → Option V
       -- This is safe because childIndex < children.length by construction
       searchInNode (children.get! childIndex) key
 termination_by node => sizeOf node
-decreasing_by sorry  -- Termination follows from structural recursion on tree height
+decreasing_by 
+  -- Use the well-founded measure on tree structure
+  -- Each child has structurally smaller size than parent
+  simp_wf
+  sorry
 
 -- Search operation - concrete implementation
 def search (tree : BPlusTree K V order) (key : K) : Option V :=
   searchInNode tree.root key
 
+-- Helper: insert key-value pair into sorted leaf entries
+def insertIntoLeaf (entries : List (KeyValue K V)) (key : K) (value : V) : List (KeyValue K V) :=
+  let newEntry := ⟨key, value⟩
+  -- Find insertion position and insert
+  let rec insertSorted (lst : List (KeyValue K V)) : List (KeyValue K V) :=
+    match lst with
+    | [] => [newEntry]
+    | entry :: rest => 
+        if key ≤ entry.key then
+          if key = entry.key then
+            -- Update existing key
+            newEntry :: rest
+          else
+            -- Insert before this entry
+            newEntry :: entry :: rest
+        else
+          -- Continue searching
+          entry :: insertSorted rest
+  insertSorted entries
+
+-- Helper: insert into a specific node (simplified version)
+def insertIntoNode : BPlusNode K V order → K → V → BPlusNode K V order
+
+-- Much cleaner with node-specific predicates:
+-- def insertIntoNodeSafe (node : BPlusNode K V order) 
+--                        (h : nodeWellFormed node)  -- Contains exactly what we need!
+--                        (key : K) (value : V) 
+--                        : { result : BPlusNode K V order // nodeWellFormed result }
+  | BPlusNode.leaf entries, key, value =>
+      -- Insert into sorted position in leaf
+      BPlusNode.leaf (insertIntoLeaf entries key value)
+  | BPlusNode.internal keys children, key, value =>
+      -- Find the appropriate child and recursively insert
+      let childIndex := min (findChildIndex keys key) (children.length - 1)
+      let updatedChild := insertIntoNode (children.get! childIndex) key value
+      -- Replace the child in the children list
+      BPlusNode.internal keys (children.set childIndex updatedChild)
+termination_by node => sizeOf node
+decreasing_by 
+  -- With nodeWellFormed, this becomes much cleaner!
+  simp_wf
+  -- For well-formed internal nodes, we have:
+  -- 1. children.length = keys.length + 1 (from internalWellFormed)
+  -- 2. children.length > 0 (from internalWellFormed)
+  -- 3. childIndex < children.length (from min bounds)
+  
+  -- TODO: Need to add internalWellFormed as precondition to make this work
+  -- For now, the structural argument is sound but hard to prove without preconditions
+  sorry
+
 -- Insert operation  
-def insert (tree : BPlusTree K V order) (key : K) (value : V) : BPlusTree K V order := sorry
+def insert (tree : BPlusTree K V order) (key : K) (value : V) : BPlusTree K V order :=
+  let newRoot := insertIntoNode tree.root key value
+  { root := newRoot, height := tree.height }
 
 -- Delete operation
 def delete (tree : BPlusTree K V order) (key : K) : BPlusTree K V order := sorry
