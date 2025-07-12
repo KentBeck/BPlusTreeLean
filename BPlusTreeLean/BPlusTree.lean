@@ -185,7 +185,18 @@ theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
 theorem maxKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   maxKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
   -- This is a structural property that doesn't need wellFormed
-  sorry
+  cases node with
+  | leaf entries =>
+    cases entries with
+    | nil => 
+      simp [maxKeyInSubtree, allKeysInSubtree]
+    | cons kv rest =>
+      simp [maxKeyInSubtree, allKeysInSubtree]
+  | internal keys children =>
+    simp [maxKeyInSubtree, allKeysInSubtree]
+    -- For internal nodes, this requires proving the relationship for children
+    -- This needs mutual induction on the children structure
+    sorry
 
 -- Helper: check if node's keys are within given bounds
 def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Option K) : Prop :=
@@ -197,6 +208,38 @@ def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Optio
 def keyRangesValid : BPlusNode K V order → Prop
   | BPlusNode.leaf _ => True
   | BPlusNode.internal _ _ => True  -- Simplified for now
+
+-- Key span: the range of keys contained in a subtree
+def keySpan (node : BPlusNode K V order) : Option (K × K) :=
+  match minKeyInSubtree node, maxKeyInSubtree node with
+  | some min_k, some max_k => some (min_k, max_k)
+  | _, _ => none
+
+-- Helper: check if one key span is contained within another
+def keySpanContained (child_span parent_span : Option (K × K)) : Prop :=
+  match child_span, parent_span with
+  | some (c_min, c_max), some (p_min, p_max) => p_min ≤ c_min ∧ c_max ≤ p_max
+  | none, _ => True  -- Empty child span is contained in any parent span
+  | some _, none => False  -- Non-empty child can't be contained in empty parent
+
+-- Helper: check if a node is a child of an internal node
+def isChildOf (child : BPlusNode K V order) (parent : BPlusNode K V order) : Prop :=
+  match parent with
+  | BPlusNode.leaf _ => False
+  | BPlusNode.internal _ children => child ∈ children
+
+-- Core B+ Tree Property: Child key spans are contained within parent key spans
+theorem child_key_span_contained (parent child : BPlusNode K V order) :
+  nodeWellFormed parent →
+  allNodesWellFormed parent →
+  keyRangesValid parent →
+  isChildOf child parent →
+  keySpanContained (keySpan child) (keySpan parent) := by
+  intro h_node_wf h_all_wf h_key_ranges h_child
+  -- This requires the proper keyRangesValid invariant to be implemented
+  -- The proof would show that B+ tree separator keys properly partition
+  -- the key space, ensuring child ranges don't exceed parent ranges
+  sorry
 
 -- Complete well-formed B+ Tree predicate
 def wellFormed (tree : BPlusTree K V order) : Prop :=
@@ -231,6 +274,8 @@ decreasing_by
   -- Tree navigation terminates when we reach leaves
   simp_wf
   -- The child node has smaller sizeOf than the parent internal node
+  -- This requires proving that elements of a list have smaller sizeOf than the list
+  -- For now, this is a fundamental property of inductive data structures
   sorry
 
 -- Phase 2: Search within a fixed-length leaf (simple iteration)
