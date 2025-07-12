@@ -145,6 +145,45 @@ mutual
         | none, none => none
 end
 
+-- Phase 1.2: Foundational lemmas for mutual recursive helper functions
+
+-- Key insight: These lemmas establish the basic structural relationships
+-- that are needed for the main correctness proofs
+
+-- Lemma: minKeyInChildren = none iff allKeysInChildren = []
+theorem minKeyInChildren_none_iff_empty (children : List (BPlusNode K V order)) :
+  minKeyInChildren children = none ↔ allKeysInChildren children = [] := by
+  induction children with
+  | nil => simp [minKeyInChildren, allKeysInChildren]
+  | cons child rest ih =>
+    simp [minKeyInChildren, allKeysInChildren]
+    -- This proof requires the minKeyInSubtree_none_iff_empty theorem to be available
+    -- which creates a circular dependency. For now, establish the structure
+    sorry
+
+-- Lemma: maxKeyInChildren = none iff allKeysInChildren = []  
+theorem maxKeyInChildren_none_iff_empty (children : List (BPlusNode K V order)) :
+  maxKeyInChildren children = none ↔ allKeysInChildren children = [] := by
+  -- This follows the same pattern as minKeyInChildren_none_iff_empty
+  -- but uses maxKeyInSubtree instead of minKeyInSubtree
+  sorry
+
+-- Helper lemma: list append equals empty iff both components empty
+theorem list_append_eq_nil_iff {α : Type} (l1 l2 : List α) :
+  l1 ++ l2 = [] ↔ l1 = [] ∧ l2 = [] := by
+  constructor
+  · intro h
+    cases l1 with
+    | nil => 
+      simp at h
+      exact ⟨rfl, h⟩
+    | cons x xs => 
+      simp at h
+      -- Impossible case: non-empty list append something = []
+  · intro ⟨h1, h2⟩
+    rw [h1, h2]
+    rfl
+
 -- Phase 1.2: Correctness properties for helper functions
 
 -- ⚠️  REVISED STRATEGY: Helper proofs need wellFormed invariants!
@@ -166,10 +205,17 @@ theorem minKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
 -- Property: maxKeyInSubtree returns actual maximum key (DEFERRED)
 theorem maxKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
   maxKeyInSubtree node = some k → ∀ k' ∈ allKeysInSubtree node, k' ≤ k := by
-  -- TODO: Complete after wellFormed proofs are established  
+  intro h_max k' h_k'_in
+  -- This proof is analogous to minKeyInSubtree_correct but for maximum
+  -- This proof requires:
+  -- 1. For leaf nodes: leafSorted to show all keys ≤ last key (via getLast?)
+  -- 2. For internal nodes: keyRangesValid + mutual induction on maxKeyInChildren
+  -- 3. The proper wellFormed assumptions to access these invariants
+  -- The structure mirrors minKeyInSubtree_correct but uses max instead of min
   sorry
 
--- Property: minKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
+-- Property: minKeyInSubtree returns none iff no keys exist 
+-- NOTE: For internal nodes in well-formed trees, this is vacuously true (both sides false)
 theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   minKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
   -- This proof works by case analysis on the node structure
@@ -182,25 +228,29 @@ theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
       simp [minKeyInSubtree, allKeysInSubtree]
   | internal keys children =>
     simp [minKeyInSubtree, allKeysInSubtree]
-    -- For internal nodes: minKeyInChildren = none iff all children have empty key lists
-    -- This is true because if any child has keys, minKeyInChildren finds the minimum
-    -- The key insight: internal node's keys come from children + separator keys
+    -- Key insight: In well-formed B+ trees, internal nodes always have keys!
+    -- allKeysInSubtree = keys ++ allKeysInChildren children
+    -- For this to be [], we'd need keys = [] AND allKeysInChildren children = []
+    -- But well-formed internal nodes have keys.length > 0 (from internalWellFormed)
+    -- Therefore, this case should be impossible in well-formed trees
     constructor
     · intro h_min_none
-      -- If minKeyInChildren = none, then allKeysInChildren = []
-      -- Combined with keys, this means the total key list is just keys
-      -- But we need to show keys ++ allKeysInChildren children = []
-      -- This means both keys = [] and allKeysInChildren children = []
-      sorry -- Need to prove allKeysInChildren = [] → children all empty
+      -- If we reach this case, the tree violates B+ tree invariants
+      -- In a well-formed tree, minKeyInSubtree on internal node should never be none
+      -- because either children have keys OR separator keys exist
+      sorry -- This case indicates malformed tree - need wellFormed assumption
     · intro h_all_empty  
-      -- If keys ++ allKeysInChildren children = [], then allKeysInChildren children = []
-      -- This should imply minKeyInChildren = none
-      sorry -- Need to prove children all empty → minKeyInChildren = none
+      -- Similarly, allKeysInSubtree = [] for internal node indicates malformed tree
+      -- because it requires keys = [] which violates internal node invariants
+      obtain ⟨h_keys_empty, h_children_empty⟩ := h_all_empty
+      -- h_keys_empty : keys = [] violates wellFormed internal node invariants
+      sorry -- This case indicates malformed tree - need wellFormed assumption
 
--- Property: maxKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
+-- Property: maxKeyInSubtree returns none iff no keys exist
+-- NOTE: For internal nodes in well-formed trees, this is vacuously true (both sides false)
 theorem maxKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   maxKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
-  -- This is a structural property that doesn't need wellFormed
+  -- For leaf nodes: straightforward. For internal nodes: vacuously true in wellFormed trees
   cases node with
   | leaf entries =>
     cases entries with
@@ -210,9 +260,18 @@ theorem maxKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
       simp [maxKeyInSubtree, allKeysInSubtree]
   | internal keys children =>
     simp [maxKeyInSubtree, allKeysInSubtree]
-    -- For internal nodes, this requires proving the relationship for children
-    -- This needs mutual induction on the children structure
-    sorry
+    -- Same insight as minKeyInSubtree: internal nodes in well-formed trees never empty
+    -- For maxKeyInSubtree = none on internal node, we'd need keys = [] AND no child keys
+    -- But keys = [] violates internalWellFormed invariants
+    constructor
+    · intro h_max_none
+      -- This case indicates malformed tree - internal nodes should always have keys
+      sorry -- Need wellFormed assumption to prove this is impossible
+    · intro h_all_empty
+      -- Similarly, allKeysInSubtree = [] for internal node indicates malformed tree
+      obtain ⟨h_keys_empty, h_children_empty⟩ := h_all_empty
+      -- h_keys_empty : keys = [] violates wellFormed internal node invariants
+      sorry -- Need wellFormed assumption to prove this is impossible
 
 -- Helper: check if node's keys are within given bounds
 def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Option K) : Prop :=
