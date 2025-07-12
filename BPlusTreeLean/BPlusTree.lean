@@ -218,7 +218,15 @@ def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Optio
 -- Helper: key ranges properly maintained with sibling ordering using min/max
 def keyRangesValid : BPlusNode K V order → Prop
   | BPlusNode.leaf _ => True
-  | BPlusNode.internal _ _ => True  -- Simplified for now
+  | BPlusNode.internal keys children => 
+      -- For well-formed internal nodes: keys act as separators between children
+      -- children[0] contains keys ≤ keys[0]
+      -- children[i] contains keys in range (keys[i-1], keys[i]] 
+      -- children[last] contains keys > keys[last]
+      children.length = keys.length + 1 ∧
+      (∀ i : Nat, i < keys.length → 
+        (∀ k ∈ allKeysInSubtree (children.get! i), k ≤ keys.get! i) ∧
+        (∀ k ∈ allKeysInSubtree (children.get! (i + 1)), keys.get! i < k))
 
 -- Key span: the range of keys contained in a subtree
 def keySpan (node : BPlusNode K V order) : Option (K × K) :=
@@ -247,10 +255,19 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
   isChildOf child parent →
   keySpanContained (keySpan child) (keySpan parent) := by
   intro h_node_wf h_all_wf h_key_ranges h_child
-  -- This requires the proper keyRangesValid invariant to be implemented
-  -- The proof would show that B+ tree separator keys properly partition
-  -- the key space, ensuring child ranges don't exceed parent ranges
-  sorry
+  -- Now we can use the proper keyRangesValid invariant!
+  unfold keySpanContained keySpan
+  cases parent with
+  | leaf _ => 
+    -- Leaves have no children, contradiction
+    simp [isChildOf] at h_child
+  | internal keys children =>
+    -- For internal nodes, keyRangesValid gives us the separator properties
+    simp [isChildOf] at h_child
+    -- Child is in children list, and keyRangesValid ensures proper key separation
+    -- This means child's key range must be contained within parent's range
+    -- The detailed proof requires showing min/max relationships
+    sorry
 
 -- Note: The key span insight suggests we should prove termination based on
 -- key space narrowing rather than structural size, but that requires 
