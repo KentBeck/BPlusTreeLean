@@ -97,22 +97,83 @@ end
 -- 4. rest has smaller length than original list
 -- 5. Eventually reach leaves and empty lists → terminate
 
+-- Phase 1.2: Helper functions using same height-based termination pattern
+
+mutual
+  -- Find minimum key in subtree
+  def minKeyInSubtree : BPlusNode K V order → Option K
+    | BPlusNode.leaf [] => none
+    | BPlusNode.leaf (kv :: _) => some kv.key
+    | BPlusNode.internal _ children => minKeyInChildren children
+  
+  -- Find maximum key in subtree  
+  def maxKeyInSubtree : BPlusNode K V order → Option K
+    | BPlusNode.leaf [] => none
+    | BPlusNode.leaf kvs => kvs.getLast?.map (·.key)
+    | BPlusNode.internal _ children => maxKeyInChildren children
+  
+  -- Helper: find minimum in children list
+  def minKeyInChildren : List (BPlusNode K V order) → Option K
+    | [] => none
+    | [child] => minKeyInSubtree child
+    | child :: rest => 
+        match minKeyInSubtree child, minKeyInChildren rest with
+        | some k1, some k2 => some (if k1 ≤ k2 then k1 else k2)
+        | some k1, none => some k1
+        | none, some k2 => some k2
+        | none, none => none
+  
+  -- Helper: find maximum in children list
+  def maxKeyInChildren : List (BPlusNode K V order) → Option K
+    | [] => none
+    | [child] => maxKeyInSubtree child
+    | child :: rest =>
+        match maxKeyInSubtree child, maxKeyInChildren rest with
+        | some k1, some k2 => some (if k1 ≤ k2 then k2 else k1)
+        | some k1, none => some k1
+        | none, some k2 => some k2
+        | none, none => none
+end
+
+-- Phase 1.2: Correctness properties for helper functions
+
+-- Property: minKeyInSubtree returns actual minimum key
+theorem minKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
+  minKeyInSubtree node = some k → ∀ k' ∈ allKeysInSubtree node, k ≤ k' := by
+  sorry
+
+-- Property: maxKeyInSubtree returns actual maximum key  
+theorem maxKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
+  maxKeyInSubtree node = some k → ∀ k' ∈ allKeysInSubtree node, k' ≤ k := by
+  sorry
+
+-- Property: minKeyInSubtree returns none iff no keys exist
+theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
+  minKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
+  sorry
+
+-- Property: maxKeyInSubtree returns none iff no keys exist
+theorem maxKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
+  maxKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
+  sorry
+
 -- Helper: check if node's keys are within given bounds
 def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Option K) : Prop :=
   ∀ k ∈ allKeysInSubtree node,
     (lower_bound.isNone ∨ lower_bound.get! < k) ∧
     (upper_bound.isNone ∨ k < upper_bound.get!)
 
--- Helper: key ranges properly maintained with sibling ordering
+-- Helper: key ranges properly maintained with sibling ordering using min/max
 def keyRangesValid : BPlusNode K V order → Prop
   | BPlusNode.leaf _ => True
   | BPlusNode.internal keys children =>
-      -- Each child respects its key range bounds relative to siblings
-      nodeInKeyRange (children.get! 0) none (some (keys.get! 0)) ∧
-      (∀ i, 0 < i ∧ i < keys.length → 
-        nodeInKeyRange (children.get! i) (some (keys.get! (i-1))) (some (keys.get! i))) ∧
-      nodeInKeyRange (children.get! keys.length) (some (keys.getLast!)) none ∧
-      -- Recursively check children
+      -- Proper key separation: each routing key separates adjacent children
+      (∀ i, i < keys.length → 
+        -- All keys in left child ≤ routing key < all keys in right child
+        (∀ k, minKeyInSubtree (children.get! i) = some k → k ≤ keys.get! i) ∧
+        (∀ k, maxKeyInSubtree (children.get! i) = some k → k ≤ keys.get! i) ∧
+        (∀ k, minKeyInSubtree (children.get! (i + 1)) = some k → keys.get! i < k)) ∧
+      -- Recursively check all children
       ∀ child ∈ children, keyRangesValid child
 
 -- Complete well-formed B+ Tree predicate
