@@ -264,14 +264,8 @@ def insertIntoLeaf (entries : List (KeyValue K V)) (key : K) (value : V) : List 
           entry :: insertSorted rest
   insertSorted entries
 
--- Helper: insert into a specific node (simplified version)
+-- Helper: insert into a specific node (original unsafe version)
 def insertIntoNode : BPlusNode K V order → K → V → BPlusNode K V order
-
--- Much cleaner with node-specific predicates:
--- def insertIntoNodeSafe (node : BPlusNode K V order) 
---                        (h : nodeWellFormed node)  -- Contains exactly what we need!
---                        (key : K) (value : V) 
---                        : { result : BPlusNode K V order // nodeWellFormed result }
   | BPlusNode.leaf entries, key, value =>
       -- Insert into sorted position in leaf
       BPlusNode.leaf (insertIntoLeaf entries key value)
@@ -283,16 +277,39 @@ def insertIntoNode : BPlusNode K V order → K → V → BPlusNode K V order
       BPlusNode.internal keys (children.set childIndex updatedChild)
 termination_by node => sizeOf node
 decreasing_by 
-  -- With nodeWellFormed, this becomes much cleaner!
+  -- Structural termination (with sorry for now)
   simp_wf
-  -- For well-formed internal nodes, we have:
-  -- 1. children.length = keys.length + 1 (from internalWellFormed)
-  -- 2. children.length > 0 (from internalWellFormed)
-  -- 3. childIndex < children.length (from min bounds)
-  
-  -- TODO: Need to add internalWellFormed as precondition to make this work
-  -- For now, the structural argument is sound but hard to prove without preconditions
   sorry
+
+-- Safe version with well-formedness precondition
+def insertIntoNodeSafe (node : BPlusNode K V order) 
+                       (h : nodeWellFormed node)  -- Contains exactly what we need!
+                       (key : K) (value : V) 
+                       : BPlusNode K V order :=
+  match node with
+  | BPlusNode.leaf entries =>
+      -- For leaves, we know from h: leafWellFormed entries order
+      BPlusNode.leaf (insertIntoLeaf entries key value)
+  | BPlusNode.internal keys children =>
+      -- For internal nodes, we know from h: internalWellFormed keys children order
+      -- This gives us: children.length = keys.length + 1 and children.length > 0
+      let childIndex := findChildIndex keys key
+      -- Bounds safety: childIndex ≤ keys.length < children.length (from invariant)
+      have h_bounds : childIndex < children.length := by
+        -- findChildIndex returns ≤ keys.length
+        have h_find_bound : findChildIndex keys key ≤ keys.length := by
+          sorry -- This follows from findChildIndex definition
+        -- From internalWellFormed: children.length = keys.length + 1
+        have h_struct : children.length = keys.length + 1 := by
+          -- Extract from internalWellFormed 
+          simp [nodeWellFormed, internalWellFormed] at h
+          exact h.2.1
+        omega
+      let child := children.get ⟨childIndex, h_bounds⟩
+      -- For now, use unsafe recursive call (would need to prove child well-formedness)
+      let updatedChild := insertIntoNode child key value  
+      -- Replace the child
+      BPlusNode.internal keys (children.set childIndex updatedChild)
 
 -- Insert operation  
 def insert (tree : BPlusTree K V order) (key : K) (value : V) : BPlusTree K V order :=

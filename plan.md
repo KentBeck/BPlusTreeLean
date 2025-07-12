@@ -142,6 +142,20 @@ impl<K: Ord, V, const ORDER: usize> BPlusTree<K, V, ORDER> {
 - [ ] Concurrent access patterns
 - [ ] Persistence and recovery testing
 
+## Phase 6: Eliminate Unsafe Variants (Week 11)
+
+### 6.1 Complete Safe Implementation Migration
+- [ ] Prove all required invariants for safe operation functions
+- [ ] Complete termination proofs for `insertIntoNodeSafe` and related functions
+- [ ] Remove unsafe variants: `insertIntoNode`, `searchInNode` with incomplete proofs
+- [ ] Ensure all operations use safe variants with proper preconditions
+
+### 6.2 Final Verification
+- [ ] Verify all operations have complete well-formedness preconditions
+- [ ] Prove invariant preservation for all safe operations
+- [ ] Remove all remaining `sorry` placeholders
+- [ ] Establish complete formal verification chain from specification to implementation
+
 ## Success Criteria
 
 ✅ **Phase 1 Complete**: All `sorry` replaced with proofs, builds without warnings
