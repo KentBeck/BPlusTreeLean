@@ -358,11 +358,74 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
     simp at h_key_ranges
     obtain ⟨h_struct, h_separation⟩ := h_key_ranges
     
-    -- The proof requires finding the position of child in children
-    -- and using the separation property to bound child's key span
-    -- by adjacent separator keys. This ensures child span ⊆ parent span.
-    -- However, this requires additional lemmas about min/max and list positions
-    sorry
+    -- The proof strategy:
+    -- 1. Find the index i where child = children[i]
+    -- 2. Use keyRangesValid to get bounds on keys in children[i]
+    -- 3. Show these bounds contain child's keySpan within parent's keySpan
+    
+    -- From h_separation: ∀ i < keys.length, 
+    --   (∀ k ∈ allKeysInSubtree (children[i]), k ≤ keys[i]) ∧
+    --   (∀ k ∈ allKeysInSubtree (children[i+1]), keys[i] < k)
+    
+    cases h_min : minKeyInSubtree child with
+    | none =>
+      -- If child has no keys, then keySpan child = none
+      simp [h_min]
+      -- keySpanContained none (keySpan parent) = True by definition
+    | some child_min =>
+      cases h_max : maxKeyInSubtree child with
+      | none =>
+        -- If child has min but no max, contradiction (should be impossible)
+        -- In well-formed trees, if minKeyInSubtree = some k, then maxKeyInSubtree = some k' 
+        sorry
+      | some child_max =>
+        simp [h_min, h_max]
+        -- Now we need to show: 
+        -- parent_min ≤ child_min ∧ child_max ≤ parent_max
+        
+        -- Find the position of child in children
+        have ⟨i, h_i_bound, h_child_eq⟩ : ∃ i, i < children.length ∧ children.get! i = child := by
+          -- child ∈ children implies ∃ i such that children[i] = child
+          sorry
+        
+        -- Use keyRangesValid to bound child's keys
+        have h_child_keys_bounded : ∀ k ∈ allKeysInSubtree child, 
+          (i = 0 ∨ keys.get! (i - 1) < k) ∧ 
+          (i = keys.length ∨ k ≤ keys.get! i) := by
+          -- This follows from h_separation applied to position i
+          sorry
+          
+        -- child_min and child_max are in allKeysInSubtree child
+        have h_min_in : child_min ∈ allKeysInSubtree child := by
+          -- minKeyInSubtree_correct: child_min is minimum of allKeysInSubtree child
+          sorry
+        have h_max_in : child_max ∈ allKeysInSubtree child := by
+          -- maxKeyInSubtree_correct: child_max is maximum of allKeysInSubtree child  
+          sorry
+          
+        -- Apply bounds to child_min and child_max
+        have h_min_bounded := h_child_keys_bounded child_min h_min_in
+        have h_max_bounded := h_child_keys_bounded child_max h_max_in
+        
+        -- Show parent keySpan contains child keySpan
+        cases h_parent_min : minKeyInSubtree (BPlusNode.internal keys children) with
+        | none => sorry -- Parent should have keys if it has non-empty children
+        | some parent_min =>
+          cases h_parent_max : maxKeyInSubtree (BPlusNode.internal keys children) with  
+          | none => sorry -- Parent should have keys if it has non-empty children
+          | some parent_max =>
+            simp [h_parent_min, h_parent_max]
+            constructor
+            · -- parent_min ≤ child_min
+              -- parent_min is minimum of keys ++ allKeysInChildren children
+              -- child_min is minimum of one of the children
+              -- So parent_min ≤ child_min
+              sorry
+            · -- child_max ≤ parent_max  
+              -- parent_max is maximum of keys ++ allKeysInChildren children
+              -- child_max is maximum of one of the children
+              -- So child_max ≤ parent_max
+              sorry
 
 -- Note: The key span insight suggests we should prove termination based on
 -- key space narrowing rather than structural size, but that requires 
@@ -522,10 +585,49 @@ def rangeQuery (tree : BPlusTree K V order) (startKey endKey : K) : List (KeyVal
 
 -- Theorems to prove about our B+ Tree
 
--- Search correctness
+-- Helper: get all key-value pairs in a subtree (for correctness statements)
+mutual
+def allEntriesInSubtree : BPlusNode K V order → List (KeyValue K V)
+  | BPlusNode.leaf entries => entries
+  | BPlusNode.internal _ children => allEntriesInChildren children
+
+def allEntriesInChildren : List (BPlusNode K V order) → List (KeyValue K V)
+  | [] => []
+  | child :: rest => allEntriesInSubtree child ++ allEntriesInChildren rest
+end
+
+-- Search correctness: if search finds a value, then the key-value pair exists in the tree
+theorem search_finds_existing_key {tree : BPlusTree K V order} {key : K} {value : V} :
+  wellFormed tree →
+  search tree key = some value →
+  {key := key, value := value} ∈ allEntriesInSubtree tree.root := by
+  intro h_wf h_search
+  -- Unfold search definition and use findLeafForKey + searchInLeaf correctness
+  unfold search searchInNode at h_search
+  -- search = searchInLeaf (findLeafForKey tree.root key) key = some value
+  -- By searchInLeaf_correct: {key := key, value := value} ∈ findLeafForKey tree.root key
+  -- By findLeafForKey_correct: findLeafForKey navigates to correct leaf containing the key
+  -- Therefore: {key := key, value := value} exists in tree
+  sorry
+
+-- Search completeness: if a key-value pair exists in the tree, search finds it  
+theorem search_finds_all_keys {tree : BPlusTree K V order} {key : K} {value : V} :
+  wellFormed tree →
+  {key := key, value := value} ∈ allEntriesInSubtree tree.root →
+  search tree key = some value := by
+  intro h_wf h_exists
+  -- The converse: if {key := key, value := value} exists in tree, then search finds it
+  -- This requires uniqueness of keys in B+ trees (each key maps to unique value)
+  -- and correctness of findLeafForKey navigation to find the correct leaf
+  sorry
+
+-- High-level search correctness combining both directions
 theorem search_correct {tree : BPlusTree K V order} {key : K} :
   wellFormed tree →
-  (search tree key).isSome ↔ ∃ value, insert tree key value = tree := by sorry
+  (search tree key).isSome ↔ ∃ value, {key := key, value := value} ∈ allEntriesInSubtree tree.root := by
+  -- This theorem combines search_finds_existing_key and search_finds_all_keys
+  -- to show that search succeeds exactly when the key exists in the tree
+  sorry
 
 -- Insert preserves well-formedness
 theorem insert_preserves_wellformed {tree : BPlusTree K V order} {key : K} {value : V} :
