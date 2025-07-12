@@ -177,9 +177,20 @@ theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
       simp [minKeyInSubtree, allKeysInSubtree]
   | internal keys children =>
     simp [minKeyInSubtree, allKeysInSubtree]
-    -- For internal nodes, this requires proving the relationship for children
-    -- This needs mutual induction on the children structure
-    sorry
+    -- For internal nodes: minKeyInChildren = none iff all children have empty key lists
+    -- This is true because if any child has keys, minKeyInChildren finds the minimum
+    -- The key insight: internal node's keys come from children + separator keys
+    constructor
+    · intro h_min_none
+      -- If minKeyInChildren = none, then allKeysInChildren = []
+      -- Combined with keys, this means the total key list is just keys
+      -- But we need to show keys ++ allKeysInChildren children = []
+      -- This means both keys = [] and allKeysInChildren children = []
+      sorry -- Need to prove allKeysInChildren = [] → children all empty
+    · intro h_all_empty  
+      -- If keys ++ allKeysInChildren children = [], then allKeysInChildren children = []
+      -- This should imply minKeyInChildren = none
+      sorry -- Need to prove children all empty → minKeyInChildren = none
 
 -- Property: maxKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
 theorem maxKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
@@ -240,6 +251,14 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
   -- The proof would show that B+ tree separator keys properly partition
   -- the key space, ensuring child ranges don't exceed parent ranges
   sorry
+
+-- Note: The key span insight suggests we should prove termination based on
+-- key space narrowing rather than structural size, but that requires 
+-- proper keyRangesValid implementation first
+
+-- Key insight: We can now use keySpan to reason about containment relationships
+-- between parent and child nodes, which is more semantically meaningful 
+-- than structural termination for B+ tree proofs
 
 -- Complete well-formed B+ Tree predicate
 def wellFormed (tree : BPlusTree K V order) : Prop :=
