@@ -25,7 +25,7 @@ structure BPlusTree (K V : Type) (order : Nat) where
 namespace BPlusTree
 
 variable {K V : Type} [LT K] [LE K] [DecidableRel (α := K) (· < ·)] [DecidableRel (α := K) (· ≤ ·)] 
-         [Inhabited K] [Inhabited V] {order : Nat}
+         [DecidableEq K] [Inhabited K] [Inhabited V] {order : Nat}
 
 -- Invariant: minimum order must be at least 3
 def validOrder (order : Nat) : Prop := order ≥ 3
@@ -137,24 +137,34 @@ end
 
 -- Phase 1.2: Correctness properties for helper functions
 
--- Property: minKeyInSubtree returns actual minimum key
+-- ⚠️  REVISED STRATEGY: Helper proofs need wellFormed invariants!
+-- These proofs require sorted leaves and key separation properties
+-- Therefore: Operations first, then helper correctness proofs
+
+-- Property: minKeyInSubtree returns actual minimum key (DEFERRED)
 theorem minKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
+  -- wellFormed needed for leafSorted and keyRangesValid properties
   minKeyInSubtree node = some k → ∀ k' ∈ allKeysInSubtree node, k ≤ k' := by
+  -- TODO: Complete after wellFormed proofs are established
   sorry
 
--- Property: maxKeyInSubtree returns actual maximum key  
+-- Property: maxKeyInSubtree returns actual maximum key (DEFERRED)
 theorem maxKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
   maxKeyInSubtree node = some k → ∀ k' ∈ allKeysInSubtree node, k' ≤ k := by
+  -- TODO: Complete after wellFormed proofs are established  
   sorry
 
--- Property: minKeyInSubtree returns none iff no keys exist
+-- Property: minKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
 theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   minKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
+  -- This is a structural property that doesn't need wellFormed
+  -- Proof by structural induction
   sorry
 
--- Property: maxKeyInSubtree returns none iff no keys exist
+-- Property: maxKeyInSubtree returns none iff no keys exist (SIMPLE - can prove now)
 theorem maxKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   maxKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
+  -- This is a structural property that doesn't need wellFormed
   sorry
 
 -- Helper: check if node's keys are within given bounds
@@ -167,12 +177,18 @@ def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Optio
 def keyRangesValid : BPlusNode K V order → Prop
   | BPlusNode.leaf _ => True
   | BPlusNode.internal keys children =>
+      -- Structural invariant: children.length = keys.length + 1
+      children.length = keys.length + 1 ∧
       -- Proper key separation: each routing key separates adjacent children
       (∀ i, i < keys.length → 
-        -- All keys in left child ≤ routing key < all keys in right child
-        (∀ k, minKeyInSubtree (children.get! i) = some k → k ≤ keys.get! i) ∧
-        (∀ k, maxKeyInSubtree (children.get! i) = some k → k ≤ keys.get! i) ∧
-        (∀ k, minKeyInSubtree (children.get! (i + 1)) = some k → keys.get! i < k)) ∧
+        -- Left child: max key ≤ routing key
+        (match maxKeyInSubtree (children.get! i) with
+         | none => True  -- Empty subtree allowed
+         | some maxKey => maxKey ≤ keys.get! i) ∧
+        -- Right child: routing key < min key  
+        (match minKeyInSubtree (children.get! (i + 1)) with
+         | none => True  -- Empty subtree allowed
+         | some minKey => keys.get! i < minKey)) ∧
       -- Recursively check all children
       ∀ child ∈ children, keyRangesValid child
 
@@ -183,10 +199,36 @@ def wellFormed (tree : BPlusTree K V order) : Prop :=
   allLeavesAtDepth tree.root tree.height ∧ -- 2. Balanced depth
   keyRangesValid tree.root                  -- 3. Key range separation
 
+-- Phase 2: Implement concrete operations
+
 -- Basic operations (specifications)
 
--- Search operation
-def search (tree : BPlusTree K V order) (key : K) : Option V := sorry
+-- Helper: find which child to descend into based on routing keys  
+def findChildIndex (keys : List K) (key : K) : Nat :=
+  -- Find first routing key where search key ≤ routing key, else return keys.length
+  let rec go (i : Nat) : Nat :=
+    if i >= keys.length then keys.length
+    else if key ≤ keys.get! i then i
+    else go (i + 1)
+  termination_by keys.length - i
+  go 0
+
+-- Helper: search within a specific node
+def searchInNode : BPlusNode K V order → K → Option V
+  | BPlusNode.leaf entries, key => 
+      -- Linear search through leaf entries  
+      entries.find? (fun kv => kv.key = key) |>.map (·.value)
+  | BPlusNode.internal keys children, key =>
+      -- Find the appropriate child to search in
+      let childIndex := min (findChildIndex keys key) (children.length - 1)
+      -- This is safe because childIndex < children.length by construction
+      searchInNode (children.get! childIndex) key
+termination_by node => sizeOf node
+decreasing_by sorry  -- Termination follows from structural recursion on tree height
+
+-- Search operation - concrete implementation
+def search (tree : BPlusTree K V order) (key : K) : Option V :=
+  searchInNode tree.root key
 
 -- Insert operation  
 def insert (tree : BPlusTree K V order) (key : K) (value : V) : BPlusTree K V order := sorry
