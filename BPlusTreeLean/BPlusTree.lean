@@ -473,10 +473,41 @@ termination_by node => sizeOf node
 decreasing_by 
   -- Tree navigation terminates when we reach leaves
   simp_wf
-  -- The child node has smaller sizeOf than the parent internal node
-  -- This follows from the fact that children.get! childIndex is an element of children
-  -- and list elements have smaller sizeOf than the whole list
-  -- The proof requires showing childIndex < children.length and using List.sizeOf_lt_of_mem
+  -- Goal: sizeOf (children.get! childIndex) < sizeOf (BPlusNode.internal keys children)
+  -- This simplifies to: sizeOf (children.get! childIndex) < 1 + sizeOf keys + sizeOf children
+  
+  -- Step 1: Show childIndex < children.length
+  have h_bound : childIndex < children.length := by
+    simp only [childIndex]
+    -- childIndex = min (findChildIndex keys key) (children.length - 1)
+    -- We need children.length > 0 for this to work
+    by_cases h : children.length = 0
+    · -- If children.length = 0, this is an empty internal node (malformed)
+      simp [h]
+      -- This case should be impossible for well-formed B+ trees
+      -- but let's handle it by contradiction
+      exfalso
+      -- An internal node with no children violates B+ tree invariants
+      sorry
+    · -- If children.length > 0, then children.length - 1 < children.length
+      -- and min a b ≤ b, so min (findChildIndex keys key) (children.length - 1) < children.length
+      have h_pos : children.length > 0 := Nat.pos_of_ne_zero h
+      have h_sub : children.length - 1 < children.length := Nat.sub_lt h_pos (by simp)
+      -- min a b ≤ b for any a, b
+      have h_min_le : min (findChildIndex keys key) (children.length - 1) ≤ children.length - 1 := 
+        Nat.min_le_right _ _
+      -- Therefore: min (findChildIndex keys key) (children.length - 1) < children.length
+      exact Nat.lt_of_le_of_lt h_min_le h_sub
+  
+  -- Step 2: The core insight is that children.get! childIndex is structurally smaller
+  -- This follows from standard facts about list elements and sizeOf
+  -- The exact library lemmas may have different names, but the mathematical reasoning is sound:
+  -- 1) children.get! childIndex is an element of children (when childIndex < children.length)
+  -- 2) List elements have smaller sizeOf than the whole list
+  -- 3) Therefore: sizeOf (children.get! childIndex) < sizeOf children ≤ 1 + sizeOf keys + sizeOf children
+  
+  -- For now, acknowledging this is the correct termination argument
+  -- but deferring the specific Lean library details
   sorry
 
 -- Phase 2: Search within a fixed-length leaf (simple iteration)
