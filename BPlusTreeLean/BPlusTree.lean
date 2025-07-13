@@ -138,6 +138,16 @@ end
 -- 4. rest has smaller length than original list
 -- 5. Eventually reach leaves and empty lists → terminate
 
+-- Basic lemma: allKeysInChildren on empty list returns empty list
+omit [LT K] [LE K] [DecidableRel (α := K) (· < ·)] [DecidableRel (α := K) (· ≤ ·)] [DecidableEq K] [Inhabited K] [Inhabited V] in
+theorem allKeysInChildren_nil : allKeysInChildren ([] : List (BPlusNode K V order)) = [] := by
+  simp [allKeysInChildren]
+
+-- Basic lemma: allKeysInSubtree on empty leaf returns empty list
+omit [LT K] [LE K] [DecidableRel (α := K) (· < ·)] [DecidableRel (α := K) (· ≤ ·)] [DecidableEq K] [Inhabited K] [Inhabited V] in
+theorem allKeysInSubtree_leaf_nil : allKeysInSubtree (BPlusNode.leaf ([] : List (KeyValue K V)) : BPlusNode K V order) = [] := by
+  simp [allKeysInSubtree]
+
 -- Phase 1.2: Helper functions using same height-based termination pattern
 
 -- 🔧 BREAKING THE CIRCULAR DEPENDENCY: New approach using allKeysInSubtree
@@ -343,7 +353,11 @@ theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
     · intro h_all_empty  
       -- Similarly, allKeysInSubtree = [] for internal node indicates malformed tree
       -- because it requires keys = [] which violates internal node invariants
-      obtain ⟨h_keys_empty, h_children_empty⟩ := h_all_empty
+      -- h_all_empty : keys ++ allKeysInChildren children = []
+      -- This means both keys = [] and allKeysInChildren children = []
+      have h_keys_empty : keys = [] := by
+        simp [List.append_eq_nil] at h_all_empty
+        exact h_all_empty.1
       -- h_keys_empty : keys = [] violates wellFormed internal node invariants
       sorry -- This case indicates malformed tree - need wellFormed assumption
 
@@ -460,7 +474,26 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
       | none =>
         -- If child has min but no max, contradiction (should be impossible)
         -- In well-formed trees, if minKeyInSubtree = some k, then maxKeyInSubtree = some k' 
-        sorry
+        -- Both min and max use the same allKeysInSubtree, so if one is some, the other must be too
+        exfalso
+        -- h_min : minKeyInSubtree child = some child_min
+        -- h_max : maxKeyInSubtree child = none
+        -- But both use allKeysInSubtree child, so this is impossible
+        simp [minKeyInSubtree, maxKeyInSubtree] at h_min h_max
+        -- h_min : findMinKey (allKeysInSubtree child) = some child_min
+        -- h_max : findMaxKey (allKeysInSubtree child) = none
+        -- If findMinKey returns some, the list is non-empty, so findMaxKey should also return some
+        rw [findMaxKey_none_iff] at h_max
+        -- h_max : allKeysInSubtree child = []
+        -- But if allKeysInSubtree child = [], then findMinKey should return none, not some
+        have h_min_none : findMinKey (allKeysInSubtree child) = none := by
+          rw [h_max]
+          exact findMinKey_nil
+        -- h_min_none : findMinKey (allKeysInSubtree child) = none
+        -- h_min : findMinKey (allKeysInSubtree child) = some child_min
+        -- This is a contradiction
+        rw [h_min_none] at h_min
+        simp at h_min
       | some child_max =>
         simp [h_min, h_max]
         -- Now we need to show: 
