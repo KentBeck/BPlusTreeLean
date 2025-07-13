@@ -3,63 +3,123 @@
    ".> LEAN_PATH=././.lake/build/lib DYLD_LIBRARY_PATH= /Users/kentb/.elan/toolchains/leanprover--lean4---v4.12.0/bin/lean -Dpp.unicode.fun=true -Dpp.proofs.withType=false ././././BPlusTreeLean/BPlusTree.lean -R ./././. -o ././.lake/build/lib/BPlusTreeLean/BPlusTree.olean -i ././.lake/build/lib/BPlusTreeLean/BPlusTree.ilean -c ././.lake/build/ir/BPlusTreeLean/BPlusTree.c --json",
    "level": "trace"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:201:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:204:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:217:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:220:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:230:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:233:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:242:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:245:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:255:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:258:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:287:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:290:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:351:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:354:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:476:4: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:479:4: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:531:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:534:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:547:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:550:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:592:4: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:595:4: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:613:4: declaration uses 'sorry'",
-   "level": "warning"},
-  {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:651:4: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:616:4: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
    "././././BPlusTreeLean/BPlusTree.lean:654:4: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:670:8: declaration uses 'sorry'",
-   "level": "warning"},
-  {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:684:8: declaration uses 'sorry'",
-   "level": "warning"},
-  {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:695:8: declaration uses 'sorry'",
-   "level": "warning"},
-  {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:703:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:657:4: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
    "././././BPlusTreeLean/BPlusTree.lean:707:8: declaration uses 'sorry'",
    "level": "warning"},
   {"message":
-   "././././BPlusTreeLean/BPlusTree.lean:711:8: declaration uses 'sorry'",
+   "././././BPlusTreeLean/BPlusTree.lean:721:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:732:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:740:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:749:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:758:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:768:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:776:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:788:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:803:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:818:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:832:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:842:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:854:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:861:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:873:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:881:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:889:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:895:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:903:4: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:917:4: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:920:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:929:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:944:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:958:8: declaration uses 'sorry'",
+   "level": "warning"},
+  {"message":
+   "././././BPlusTreeLean/BPlusTree.lean:977:8: declaration uses 'sorry'",
    "level": "warning"}],
- "depHash": "9435813614852115090"}
+ "depHash": "9319549764674649262"}

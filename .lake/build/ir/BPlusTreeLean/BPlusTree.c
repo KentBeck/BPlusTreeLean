@@ -13,12 +13,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+LEAN_EXPORT lean_object* l_BPlusTree_getAllLeaves___boxed(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_findChildIndex_go(lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_insertIntoNode___rarg___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_minKeyInChildren___rarg___boxed(lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_findLeafForKey(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_delete___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 lean_object* lean_mk_empty_array_with_capacity(lean_object*);
+LEAN_EXPORT lean_object* l_BPlusTree_searchSteps(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_findLeafForKey___rarg___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_allKeysInChildren(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l___private_BPlusTreeLean_BPlusTree_0__BPlusTree_nodeWellFormed_match__1_splitter___rarg(lean_object*, lean_object*, lean_object*);
@@ -57,6 +59,7 @@ LEAN_EXPORT lean_object* l_BPlusTree_minKeyInChildren(lean_object*, lean_object*
 LEAN_EXPORT lean_object* l_BPlusTree_search___rarg___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_allEntriesInSubtree___rarg(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_rangeQuery___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_BPlusTree_searchSteps___rarg(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_maxKeyInSubtree___rarg(lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_allEntriesInChildren___rarg(lean_object*, lean_object*);
 lean_object* l_List_lengthTRAux___rarg(lean_object*, lean_object*);
@@ -65,6 +68,7 @@ LEAN_EXPORT lean_object* l___private_BPlusTreeLean_BPlusTree_0__BPlusTree_minKey
 LEAN_EXPORT lean_object* l_BPlusTree_allEntriesInChildren(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_instInhabitedBPlusNode___rarg(lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_searchInLeaf___rarg(lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_BPlusTree_getAllLeaves___rarg(lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_allEntriesInChildren___rarg___boxed(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_insertIntoNodeSafe___rarg___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_search___rarg(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
@@ -83,6 +87,7 @@ LEAN_EXPORT lean_object* l_BPlusTree_findChildIndex_go___rarg___boxed(lean_objec
 LEAN_EXPORT lean_object* l_BPlusTree_allKeysInSubtree(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_allKeysInSubtree___rarg___boxed(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_searchInNode___rarg___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_BPlusTree_searchSteps___boxed(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l___private_BPlusTreeLean_BPlusTree_0__BPlusTree_maxKeyInSubtree_match__1_splitter___rarg(lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_insert___rarg(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_findChildIndex___rarg(lean_object*, lean_object*, lean_object*, lean_object*);
@@ -109,6 +114,7 @@ LEAN_EXPORT lean_object* l_BPlusTree_keySpan___rarg___boxed(lean_object*, lean_o
 LEAN_EXPORT lean_object* l_instInhabitedBPlusNode(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_List_mapTR_loop___at_BPlusTree_allKeysInSubtree___spec__1(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_searchInLeaf___rarg___lambda__1(lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_BPlusTree_getAllLeaves(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_insert___rarg___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_BPlusTree_minKeyInSubtree___rarg(lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_instInhabitedBPlusNode___rarg(lean_object* x_1) {
@@ -2005,6 +2011,60 @@ x_3 = l_BPlusTree_allEntriesInChildren___rarg(x_1, x_2);
 lean_dec(x_2);
 lean_dec(x_1);
 return x_3;
+}
+}
+LEAN_EXPORT lean_object* l_BPlusTree_getAllLeaves___rarg(lean_object* x_1) {
+_start:
+{
+uint8_t x_2; lean_object* x_3; lean_object* x_4; 
+x_2 = 0;
+x_3 = lean_sorry(x_2);
+x_4 = lean_apply_1(x_3, x_1);
+return x_4;
+}
+}
+LEAN_EXPORT lean_object* l_BPlusTree_getAllLeaves(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
+_start:
+{
+lean_object* x_4; 
+x_4 = lean_alloc_closure((void*)(l_BPlusTree_getAllLeaves___rarg), 1, 0);
+return x_4;
+}
+}
+LEAN_EXPORT lean_object* l_BPlusTree_getAllLeaves___boxed(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
+_start:
+{
+lean_object* x_4; 
+x_4 = l_BPlusTree_getAllLeaves(x_1, x_2, x_3);
+lean_dec(x_3);
+return x_4;
+}
+}
+LEAN_EXPORT lean_object* l_BPlusTree_searchSteps___rarg(lean_object* x_1, lean_object* x_2) {
+_start:
+{
+uint8_t x_3; lean_object* x_4; lean_object* x_5; 
+x_3 = 0;
+x_4 = lean_sorry(x_3);
+x_5 = lean_apply_2(x_4, x_1, x_2);
+return x_5;
+}
+}
+LEAN_EXPORT lean_object* l_BPlusTree_searchSteps(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
+_start:
+{
+lean_object* x_4; 
+x_4 = lean_alloc_closure((void*)(l_BPlusTree_searchSteps___rarg), 2, 0);
+return x_4;
+}
+}
+LEAN_EXPORT lean_object* l_BPlusTree_searchSteps___boxed(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
+_start:
+{
+lean_object* x_4; 
+x_4 = l_BPlusTree_searchSteps(x_1, x_2, x_3);
+lean_dec(x_3);
+return x_4;
 }
 }
 lean_object* initialize_Init(uint8_t builtin, lean_object*);
