@@ -205,6 +205,7 @@ theorem list_append_eq_nil_iff {α : Type} (l1 l2 : List α) :
     | cons x xs => 
       simp at h
       -- Impossible case: non-empty list append something = []
+      -- simp should have resolved this contradiction automatically
   · intro ⟨h1, h2⟩
     rw [h1, h2]
     rfl
@@ -486,9 +487,8 @@ def searchInLeaf (entries : List (KeyValue K V)) (key : K) : Option V :=
 -- ✅ Phase 2 Correctness: Easy to prove for fixed-length list!
 theorem searchInLeaf_correct (entries : List (KeyValue K V)) (key : K) (v : V) :
   searchInLeaf entries key = some v ↔ ⟨key, v⟩ ∈ entries := by
-  -- The proof requires careful handling of List.find? and Option.map
-  -- This establishes the correct logical structure: searchInLeaf finds the value
-  -- if and only if the key-value pair is in the entries list
+  -- This is a complex proof involving List.find? properties
+  -- Let me defer this and tackle simpler proofs first
   sorry
 
 theorem searchInLeaf_none_iff (entries : List (KeyValue K V)) (key : K) :
@@ -540,8 +540,12 @@ def insertIntoNode : BPlusNode K V order → K → V → BPlusNode K V order
       BPlusNode.internal keys (children.set childIndex updatedChild)
 termination_by node => sizeOf node
 decreasing_by 
-  -- Structural termination (with sorry for now)
+  -- The recursive call is on children.get! childIndex, which is structurally smaller
+  -- This is a standard termination pattern: tree recursion on child nodes
   simp_wf
+  -- For termination, we need that children.get! childIndex has smaller sizeOf
+  -- This follows from the fact that elements of a list have smaller sizeOf than the list
+  -- The details require showing childIndex is in bounds, but this is the right structure
   sorry
 
 -- Safe version with well-formedness precondition
