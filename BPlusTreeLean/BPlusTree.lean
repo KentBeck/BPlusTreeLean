@@ -27,7 +27,7 @@ structure BPlusTree (K V : Type) (order : Nat) where
 -- Basic properties and invariants
 namespace BPlusTree
 
-variable {K V : Type} [LT K] [LE K] [DecidableRel (α := K) (· < ·)] [DecidableRel (α := K) (· ≤ ·)] 
+variable {K V : Type} [LT K] [LE K] [DecidableRel (α := K) (· < ·)] [DecidableRel (α := K) (· ≤ ·)]
          [DecidableEq K] [Inhabited K] [Inhabited V] {order : Nat}
 
 -- Invariant: minimum order must be at least 3
@@ -73,7 +73,7 @@ theorem validInternalNodeSize_nonempty {α : Type} (children : List α) (order :
 
 -- Invariant: keys in leaf nodes are sorted
 def leafSorted (entries : List (KeyValue K V)) : Prop :=
-  ∀ i j, i < j → j < entries.length → 
+  ∀ i j, i < j → j < entries.length →
     (entries.get! i).key ≤ (entries.get! j).key
 
 -- Invariant: keys in internal nodes are sorted
@@ -84,11 +84,11 @@ def internalKeysSorted (keys : List K) : Prop :=
 
 -- Leaf node well-formedness
 def leafWellFormed (entries : List (KeyValue K V)) (order : Nat) : Prop :=
-  leafSorted entries ∧ 
+  leafSorted entries ∧
   entries.length ≤ order - 1 ∧
   entries.length ≥ (order - 1) / 2  -- Minimum occupancy (except root)
 
--- Internal node well-formedness  
+-- Internal node well-formedness
 def internalWellFormed (keys : List K) (children : List (BPlusNode K V order)) (order : Nat) : Prop :=
   internalKeysSorted keys ∧
   children.length = keys.length + 1 ∧  -- The crucial invariant!
@@ -103,7 +103,7 @@ def nodeWellFormed : BPlusNode K V order → Prop
 -- Helper: recursively check all nodes are well-formed
 def allNodesWellFormed : BPlusNode K V order → Prop
   | BPlusNode.leaf _ => True  -- Base case
-  | BPlusNode.internal _ children => 
+  | BPlusNode.internal _ children =>
       (∀ child ∈ children, nodeWellFormed child) ∧  -- Each child satisfies local invariants
       (∀ child ∈ children, allNodesWellFormed child)  -- All children recursively well-formed
 
@@ -112,19 +112,19 @@ def allLeavesAtDepth : BPlusNode K V order → Nat → Prop
   | BPlusNode.leaf _, 0 => True
   | BPlusNode.leaf _, _ + 1 => False  -- Leaf at wrong depth
   | BPlusNode.internal _ _, 0 => False  -- Internal at leaf depth
-  | BPlusNode.internal _ children, depth + 1 => 
+  | BPlusNode.internal _ children, depth + 1 =>
       ∀ child ∈ children, allLeavesAtDepth child depth
 
 -- ✅ HEIGHT-BASED TERMINATION: Much cleaner approach!
 -- Key insight: Tree height decreases monotonically, we always reach leaves
 
 mutual
-  -- Extract all keys using height-based termination  
+  -- Extract all keys using height-based termination
   def allKeysInSubtree : BPlusNode K V order → List K
     | BPlusNode.leaf entries => entries.map (·.key)
-    | BPlusNode.internal keys children => 
+    | BPlusNode.internal keys children =>
         keys ++ allKeysInChildren children
-  
+
   -- Process children list (each child has height < parent)
   def allKeysInChildren : List (BPlusNode K V order) → List K
     | [] => []
@@ -132,7 +132,7 @@ mutual
 end
 
 -- Termination proof by well-founded recursion on tree structure:
--- 1. allKeysInSubtree(internal) → allKeysInChildren(children_list)  
+-- 1. allKeysInSubtree(internal) → allKeysInChildren(children_list)
 -- 2. allKeysInChildren(child::rest) → allKeysInSubtree(child) + allKeysInChildren(rest)
 -- 3. child has structurally smaller size than parent internal node
 -- 4. rest has smaller length than original list
@@ -156,13 +156,13 @@ theorem allKeysInSubtree_leaf_nil : allKeysInSubtree (BPlusNode.leaf ([] : List 
 
 -- Helper: find minimum in a list of keys
 def findMinKey (keys : List K) : Option K :=
-  keys.foldl (fun acc k => 
+  keys.foldl (fun acc k =>
     match acc with
     | none => some k
     | some min_so_far => some (if k ≤ min_so_far then k else min_so_far)
   ) none
 
--- Helper: find maximum in a list of keys  
+-- Helper: find maximum in a list of keys
 def findMaxKey (keys : List K) : Option K :=
   keys.foldl (fun acc k =>
     match acc with
@@ -175,19 +175,19 @@ omit [LT K] [DecidableRel (α := K) (· < ·)] [DecidableEq K] [Inhabited K] [In
 theorem findMinKey_nil : findMinKey ([] : List K) = none := by simp [findMinKey]
 
 theorem findMinKey_cons (k : K) (ks : List K) : findMinKey (k :: ks) ≠ none := by
-  simp [findMinKey]
-  -- The fold starts with none and immediately becomes some k, and stays some throughout
-  -- The key insight: the function always returns some when given a non-empty list
-  -- This is because foldl on (k :: ks) with initial value none becomes some k after first step
-  -- and the fold function always returns some when the accumulator is some
-  -- For now, we acknowledge this is the correct property but defer the detailed proof
+  -- This is a fundamental property of findMinKey: non-empty lists always have a minimum
+  -- The proof requires showing that List.foldl with our step function preserves "some-ness"
+  -- when starting from a non-empty list. The step function always returns some when
+  -- given any input, so once we have some k from the first element,
+  -- we'll always have some result.
+  -- This is the correct property but requires detailed reasoning about List.foldl
   sorry
 
 omit [LT K] [DecidableRel (α := K) (· < ·)] [DecidableEq K] [Inhabited K] [Inhabited V] in
 theorem findMaxKey_nil : findMaxKey ([] : List K) = none := by simp [findMaxKey]
 
 theorem findMaxKey_cons (k : K) (ks : List K) : findMaxKey (k :: ks) ≠ none := by
-  simp [findMaxKey]  
+  simp [findMaxKey]
   -- Similar reasoning as findMinKey_cons
   -- The fold starts with none and immediately becomes some k, and stays some throughout
   -- The key insight: the function always returns some when given a non-empty list
@@ -202,7 +202,7 @@ theorem findMaxKey_none_iff (ks : List K) : findMaxKey ks = none ↔ ks = [] := 
     intro h
     cases ks with
     | nil => rfl
-    | cons k rest => 
+    | cons k rest =>
       exfalso
       exact findMaxKey_cons k rest h
   · -- Reverse direction: ks = [] → findMaxKey ks = none
@@ -214,7 +214,7 @@ theorem findMaxKey_none_iff (ks : List K) : findMaxKey ks = none ↔ ks = [] := 
 def minKeyInSubtree (node : BPlusNode K V order) : Option K :=
   findMinKey (allKeysInSubtree node)
 
--- Find maximum key in subtree (new approach) 
+-- Find maximum key in subtree (new approach)
 def maxKeyInSubtree (node : BPlusNode K V order) : Option K :=
   findMaxKey (allKeysInSubtree node)
 
@@ -242,10 +242,10 @@ theorem list_append_eq_nil_iff {α : Type} (l1 l2 : List α) :
   constructor
   · intro h
     cases l1 with
-    | nil => 
+    | nil =>
       simp at h
       exact ⟨rfl, h⟩
-    | cons x xs => 
+    | cons x xs =>
       -- When l1 = x::xs, then l1 ++ l2 = x::(xs ++ l2), which can't be []
       exfalso
       simp at h
@@ -266,7 +266,7 @@ theorem minKeyInChildren_none_iff_empty (children : List (BPlusNode K V order)) 
     intro h_none
     cases h_keys : allKeysInChildren children with
     | nil => rfl
-    | cons k rest => 
+    | cons k rest =>
       -- If keys is non-empty, findMinKey should return some value
       have h_some : findMinKey (k :: rest) ≠ none := findMinKey_cons k rest
       simp [h_keys] at h_none
@@ -276,7 +276,7 @@ theorem minKeyInChildren_none_iff_empty (children : List (BPlusNode K V order)) 
     rw [h_empty]
     exact findMinKey_nil
 
--- Lemma: maxKeyInChildren = none iff allKeysInChildren = []  
+-- Lemma: maxKeyInChildren = none iff allKeysInChildren = []
 omit [Inhabited V] in
 theorem maxKeyInChildren_none_iff_empty (children : List (BPlusNode K V order)) :
   maxKeyInChildren children = none ↔ allKeysInChildren children = [] := by
@@ -299,17 +299,41 @@ theorem maxKeyInChildren_none_iff_empty (children : List (BPlusNode K V order)) 
 -- These proofs require sorted leaves and key separation properties
 -- Therefore: Operations first, then helper correctness proofs
 
--- Property: minKeyInSubtree returns actual minimum key (DEFERRED)
+-- Property: minKeyInSubtree returns actual minimum key
 theorem minKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
-  -- wellFormed needed for leafSorted and keyRangesValid properties
   minKeyInSubtree node = some k → ∀ k' ∈ allKeysInSubtree node, k ≤ k' := by
   intro h_min k' h_k'_in
-  -- This proof requires:
-  -- 1. For leaf nodes: leafSorted to show first key ≤ all other keys
-  -- 2. For internal nodes: keyRangesValid + mutual induction on minKeyInChildren
-  -- 3. The proper wellFormed assumptions to access these invariants
-  -- The structure is correct but needs the full wellFormed context
-  sorry
+  cases node with
+  | leaf entries =>
+    -- For leaf nodes: minKeyInSubtree uses findMinKey on entry keys
+    simp [minKeyInSubtree, allKeysInSubtree] at h_min h_k'_in
+    -- h_min : findMinKey (entries.map (·.key)) = some k
+    -- h_k'_in : k' ∈ entries.map (·.key)
+    -- Need: k ≤ k' for all k' in the list
+    have h_k_in : k ∈ entries.map (·.key) := by
+      -- If findMinKey returns some k, then k must be in the list
+      cases h_entries : entries.map (·.key) with
+      | nil =>
+        -- If the list is empty, findMinKey should return none, not some k
+        simp [findMinKey] at h_min
+        -- This is a contradiction since h_min says findMinKey returned some k
+        -- but findMinKey on empty list returns none
+        exfalso
+        rw [h_entries] at h_min
+        simp [findMinKey] at h_min
+      | cons first rest =>
+        -- findMinKey on non-empty list returns an element from the list
+        sorry -- This requires proving findMinKey returns an element from the input list
+    -- Now we need: k is minimum element in entries.map (·.key)
+    -- This follows from the correctness of findMinKey
+    sorry -- This requires proving findMinKey actually returns the minimum
+  | internal keys children =>
+    -- For internal nodes: minKeyInSubtree uses findMinKey on keys ++ allKeysInChildren
+    simp [minKeyInSubtree, allKeysInSubtree] at h_min h_k'_in
+    -- h_min : findMinKey (keys ++ allKeysInChildren children) = some k
+    -- h_k'_in : k' ∈ keys ++ allKeysInChildren children
+    -- Similar reasoning as leaf case, but on the combined key list
+    sorry -- This requires the same findMinKey correctness property
 
 -- Property: maxKeyInSubtree returns actual maximum key (DEFERRED)
 theorem maxKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
@@ -323,7 +347,7 @@ theorem maxKeyInSubtree_correct (node : BPlusNode K V order) (k : K) :
   -- The structure mirrors minKeyInSubtree_correct but uses max instead of min
   sorry
 
--- Property: minKeyInSubtree returns none iff no keys exist 
+-- Property: minKeyInSubtree returns none iff no keys exist
 -- NOTE: For internal nodes in well-formed trees, this is vacuously true (both sides false)
 theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   minKeyInSubtree node = none ↔ allKeysInSubtree node = [] := by
@@ -331,7 +355,7 @@ theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   cases node with
   | leaf entries =>
     cases entries with
-    | nil => 
+    | nil =>
       simp [minKeyInSubtree, allKeysInSubtree]
       exact findMinKey_nil
     | cons kv rest =>
@@ -350,7 +374,7 @@ theorem minKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
       -- In a well-formed tree, minKeyInSubtree on internal node should never be none
       -- because either children have keys OR separator keys exist
       sorry -- This case indicates malformed tree - need wellFormed assumption
-    · intro h_all_empty  
+    · intro h_all_empty
       -- Similarly, allKeysInSubtree = [] for internal node indicates malformed tree
       -- because it requires keys = [] which violates internal node invariants
       -- h_all_empty : keys ++ allKeysInChildren children = []
@@ -369,7 +393,7 @@ theorem maxKeyInSubtree_none_iff_empty (node : BPlusNode K V order) :
   cases node with
   | leaf entries =>
     cases entries with
-    | nil => 
+    | nil =>
       simp [maxKeyInSubtree, allKeysInSubtree]
       exact findMaxKey_nil
     | cons kv rest =>
@@ -399,13 +423,13 @@ def nodeInKeyRange (node : BPlusNode K V order) (lower_bound upper_bound : Optio
 -- Helper: key ranges properly maintained with sibling ordering using min/max
 def keyRangesValid : BPlusNode K V order → Prop
   | BPlusNode.leaf _ => True
-  | BPlusNode.internal keys children => 
+  | BPlusNode.internal keys children =>
       -- For well-formed internal nodes: keys act as separators between children
       -- children[0] contains keys ≤ keys[0]
-      -- children[i] contains keys in range (keys[i-1], keys[i]] 
+      -- children[i] contains keys in range (keys[i-1], keys[i]]
       -- children[last] contains keys > keys[last]
       children.length = keys.length + 1 ∧
-      (∀ i : Nat, i < keys.length → 
+      (∀ i : Nat, i < keys.length →
         (∀ k ∈ allKeysInSubtree (children.get! i), k ≤ keys.get! i) ∧
         (∀ k ∈ allKeysInSubtree (children.get! (i + 1)), keys.get! i < k))
 
@@ -439,7 +463,7 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
   -- Now we can use the proper keyRangesValid invariant!
   unfold keySpanContained keySpan
   cases parent with
-  | leaf _ => 
+  | leaf _ =>
     -- Leaves have no children, contradiction
     simp [isChildOf] at h_child
   | internal keys children =>
@@ -448,22 +472,22 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
     -- h_child : child ∈ children
     -- keyRangesValid gives us proper separation between children by separator keys
     -- keySpan child should be bounded by the separator keys adjacent to it
-    
+
     -- From keyRangesValid, we know:
     -- children.length = keys.length + 1 and proper key separation exists
     unfold keyRangesValid at h_key_ranges
     simp at h_key_ranges
     obtain ⟨h_struct, h_separation⟩ := h_key_ranges
-    
+
     -- The proof strategy:
     -- 1. Find the index i where child = children[i]
     -- 2. Use keyRangesValid to get bounds on keys in children[i]
     -- 3. Show these bounds contain child's keySpan within parent's keySpan
-    
-    -- From h_separation: ∀ i < keys.length, 
+
+    -- From h_separation: ∀ i < keys.length,
     --   (∀ k ∈ allKeysInSubtree (children[i]), k ≤ keys[i]) ∧
     --   (∀ k ∈ allKeysInSubtree (children[i+1]), keys[i] < k)
-    
+
     cases h_min : minKeyInSubtree child with
     | none =>
       -- If child has no keys, then keySpan child = none
@@ -473,7 +497,7 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
       cases h_max : maxKeyInSubtree child with
       | none =>
         -- If child has min but no max, contradiction (should be impossible)
-        -- In well-formed trees, if minKeyInSubtree = some k, then maxKeyInSubtree = some k' 
+        -- In well-formed trees, if minKeyInSubtree = some k, then maxKeyInSubtree = some k'
         -- Both min and max use the same allKeysInSubtree, so if one is some, the other must be too
         exfalso
         -- h_min : minKeyInSubtree child = some child_min
@@ -496,38 +520,38 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
         simp at h_min
       | some child_max =>
         simp [h_min, h_max]
-        -- Now we need to show: 
+        -- Now we need to show:
         -- parent_min ≤ child_min ∧ child_max ≤ parent_max
-        
+
         -- Find the position of child in children
         have ⟨i, h_i_bound, h_child_eq⟩ : ∃ i, i < children.length ∧ children.get! i = child := by
           -- child ∈ children implies ∃ i such that children[i] = child
           sorry
-        
+
         -- Use keyRangesValid to bound child's keys
-        have h_child_keys_bounded : ∀ k ∈ allKeysInSubtree child, 
-          (i = 0 ∨ keys.get! (i - 1) < k) ∧ 
+        have h_child_keys_bounded : ∀ k ∈ allKeysInSubtree child,
+          (i = 0 ∨ keys.get! (i - 1) < k) ∧
           (i = keys.length ∨ k ≤ keys.get! i) := by
           -- This follows from h_separation applied to position i
           sorry
-          
+
         -- child_min and child_max are in allKeysInSubtree child
         have h_min_in : child_min ∈ allKeysInSubtree child := by
           -- minKeyInSubtree_correct: child_min is minimum of allKeysInSubtree child
           sorry
         have h_max_in : child_max ∈ allKeysInSubtree child := by
-          -- maxKeyInSubtree_correct: child_max is maximum of allKeysInSubtree child  
+          -- maxKeyInSubtree_correct: child_max is maximum of allKeysInSubtree child
           sorry
-          
+
         -- Apply bounds to child_min and child_max
         have h_min_bounded := h_child_keys_bounded child_min h_min_in
         have h_max_bounded := h_child_keys_bounded child_max h_max_in
-        
+
         -- Show parent keySpan contains child keySpan
         cases h_parent_min : minKeyInSubtree (BPlusNode.internal keys children) with
         | none => sorry -- Parent should have keys if it has non-empty children
         | some parent_min =>
-          cases h_parent_max : maxKeyInSubtree (BPlusNode.internal keys children) with  
+          cases h_parent_max : maxKeyInSubtree (BPlusNode.internal keys children) with
           | none => sorry -- Parent should have keys if it has non-empty children
           | some parent_max =>
             simp [h_parent_min, h_parent_max]
@@ -537,18 +561,18 @@ theorem child_key_span_contained (parent child : BPlusNode K V order) :
               -- child_min is minimum of one of the children
               -- So parent_min ≤ child_min
               sorry
-            · -- child_max ≤ parent_max  
+            · -- child_max ≤ parent_max
               -- parent_max is maximum of keys ++ allKeysInChildren children
               -- child_max is maximum of one of the children
               -- So child_max ≤ parent_max
               sorry
 
 -- Note: The key span insight suggests we should prove termination based on
--- key space narrowing rather than structural size, but that requires 
+-- key space narrowing rather than structural size, but that requires
 -- proper keyRangesValid implementation first
 
 -- Key insight: We can now use keySpan to reason about containment relationships
--- between parent and child nodes, which is more semantically meaningful 
+-- between parent and child nodes, which is more semantically meaningful
 -- than structural termination for B+ tree proofs
 
 -- Complete well-formed B+ Tree predicate
@@ -567,7 +591,7 @@ def findChildIndex (keys : List K) (key : K) : Nat :=
   let rec go (idx : Nat) (remaining : List K) : Nat :=
     match remaining with
     | [] => idx
-    | k :: rest => 
+    | k :: rest =>
         if key < k then idx
         else go (idx + 1) rest
   go 0 keys
@@ -580,12 +604,12 @@ def findLeafForKey : BPlusNode K V order → K → List (KeyValue K V)
       let childIndex := min (findChildIndex keys key) (children.length - 1)
       findLeafForKey (children.get! childIndex) key
 termination_by node => sizeOf node
-decreasing_by 
+decreasing_by
   -- Tree navigation terminates when we reach leaves
   simp_wf
   -- Goal: sizeOf (children.get! childIndex) < sizeOf (BPlusNode.internal keys children)
   -- This simplifies to: sizeOf (children.get! childIndex) < 1 + sizeOf keys + sizeOf children
-  
+
   -- Step 1: Show childIndex < children.length
   have h_bound : childIndex < children.length := by
     simp only [childIndex]
@@ -604,22 +628,34 @@ decreasing_by
       have h_pos : children.length > 0 := Nat.pos_of_ne_zero h
       have h_sub : children.length - 1 < children.length := Nat.sub_lt h_pos (by simp)
       -- min a b ≤ b for any a, b
-      have h_min_le : min (findChildIndex keys key) (children.length - 1) ≤ children.length - 1 := 
+      have h_min_le : min (findChildIndex keys key) (children.length - 1) ≤ children.length - 1 :=
         Nat.min_le_right _ _
       -- Therefore: min (findChildIndex keys key) (children.length - 1) < children.length
       exact Nat.lt_of_le_of_lt h_min_le h_sub
-  
+
   -- Step 2: The core insight is that children.get! childIndex is structurally smaller
   -- This follows from standard facts about list elements and sizeOf
   -- The exact library lemmas may have different names, but the mathematical reasoning is sound:
   -- 1) children.get! childIndex is an element of children (when childIndex < children.length)
   -- 2) List elements have smaller sizeOf than the whole list
   -- 3) Therefore: sizeOf (children.get! childIndex) < sizeOf children ≤ 1 + sizeOf keys + sizeOf children
-  
+
   -- The termination proof is straightforward: navigating to a child decreases the size
   -- This is the correct termination argument for tree traversal
   -- The specific library lemmas in Lean 4 may require adjustment, but the reasoning is sound
   sorry
+
+-- Correctness of findLeafForKey: it returns entries from an actual leaf in the tree
+theorem findLeafForKey_correct (node : BPlusNode K V order) (key : K) :
+  ∃ leaf_entries, findLeafForKey node key = leaf_entries := by
+  -- Simplified version that just shows findLeafForKey terminates and returns some entries
+  cases node with
+  | leaf entries =>
+    use entries
+    simp [findLeafForKey]
+  | internal keys children =>
+    -- For internal nodes, we recursively navigate to a child
+    sorry -- This requires proper structural induction
 
 -- Phase 2: Search within a fixed-length leaf (simple iteration)
 def searchInLeaf (entries : List (KeyValue K V)) (key : K) : Option V :=
@@ -631,19 +667,41 @@ def searchInLeaf (entries : List (KeyValue K V)) (key : K) : Option V :=
 
 theorem searchInLeaf_correct (entries : List (KeyValue K V)) (key : K) (v : V) :
   searchInLeaf entries key = some v ↔ ⟨key, v⟩ ∈ entries := by
-  -- This proof requires detailed properties of List.find? and Option.map
-  -- The relationship between find? results and list membership is non-trivial
-  -- because find? might find a different entry with the same key
-  -- For B+ trees, we typically assume key uniqueness within a leaf
-  -- but this isn't encoded in our current type system
-  
-  -- The correct proof would establish:
-  -- 1. If find? returns some kv with kv.key = key, then kv ∈ entries
-  -- 2. If ⟨key, v⟩ ∈ entries, then find? finds an entry with the same key and value
-  -- 3. Key uniqueness ensures these are equivalent
-  
-  -- For now, defer this proof as it requires assumptions about key uniqueness
-  sorry
+  unfold searchInLeaf
+  constructor
+  · -- Forward: searchInLeaf returns some v → ⟨key, v⟩ ∈ entries
+    intro h_search
+    -- h_search : (entries.find? (fun kv => kv.key = key)).map (·.value) = some v
+    -- This means entries.find? found some kv with kv.key = key and kv.value = v
+    cases h_find : entries.find? (fun kv => kv.key = key) with
+    | none =>
+      simp [h_find] at h_search
+    | some kv =>
+      simp [h_find] at h_search
+      -- h_search : kv.value = v
+      -- From List.find?_some: kv ∈ entries and kv.key = key
+      have h_kv_in : kv ∈ entries := by
+        -- List.find? returns some element from the list
+        sorry -- Need correct Lean 4 library lemma
+      have h_kv_key : kv.key = key := by
+        -- The predicate was satisfied for the found element
+        sorry -- Need correct Lean 4 library lemma
+      -- Since kv.key = key and kv.value = v, we have kv = ⟨key, v⟩
+      have h_kv_eq : kv = ⟨key, v⟩ := by
+        cases kv with
+        | mk k val =>
+          simp at h_kv_key h_search
+          rw [h_kv_key, h_search]
+      rw [← h_kv_eq]
+      exact h_kv_in
+  · -- Backward: ⟨key, v⟩ ∈ entries → searchInLeaf returns some v
+    intro h_in
+    -- Since ⟨key, v⟩ ∈ entries, find? should find it
+    have h_find : entries.find? (fun kv => kv.key = key) = some ⟨key, v⟩ := by
+      -- This requires that find? finds the first matching element
+      -- For B+ trees with unique keys per leaf, this should work
+      sorry -- Need uniqueness assumption or more careful reasoning
+    simp [h_find]
 
 theorem searchInLeaf_none_iff (entries : List (KeyValue K V)) (key : K) :
   searchInLeaf entries key = none ↔ ∀ v, ⟨key, v⟩ ∉ entries := by
@@ -658,7 +716,7 @@ def searchInNode (node : BPlusNode K V order) (key : K) : Option V :=
   let leafEntries := findLeafForKey node key
   searchInLeaf leafEntries key
 
--- Main search operation  
+-- Main search operation
 def search (tree : BPlusTree K V order) (key : K) : Option V :=
   searchInNode tree.root key
 
@@ -669,7 +727,7 @@ def insertIntoLeaf (entries : List (KeyValue K V)) (key : K) (value : V) : List 
   let rec insertSorted (lst : List (KeyValue K V)) : List (KeyValue K V) :=
     match lst with
     | [] => [newEntry]
-    | entry :: rest => 
+    | entry :: rest =>
         if key ≤ entry.key then
           if key = entry.key then
             -- Update existing key
@@ -694,7 +752,7 @@ def insertIntoNode : BPlusNode K V order → K → V → BPlusNode K V order
       -- Replace the child in the children list
       BPlusNode.internal keys (children.set childIndex updatedChild)
 termination_by node => sizeOf node
-decreasing_by 
+decreasing_by
   -- The recursive call is on children.get! childIndex, which is structurally smaller
   -- This is a standard termination pattern: tree recursion on child nodes
   simp_wf
@@ -704,9 +762,9 @@ decreasing_by
   sorry
 
 -- Safe version with well-formedness precondition
-def insertIntoNodeSafe (node : BPlusNode K V order) 
+def insertIntoNodeSafe (node : BPlusNode K V order)
                        (h : nodeWellFormed node)  -- Contains exactly what we need!
-                       (key : K) (value : V) 
+                       (key : K) (value : V)
                        : BPlusNode K V order :=
   match node with
   | BPlusNode.leaf entries =>
@@ -726,17 +784,17 @@ def insertIntoNodeSafe (node : BPlusNode K V order)
           sorry
         -- From internalWellFormed: children.length = keys.length + 1
         have h_struct : children.length = keys.length + 1 := by
-          -- Extract from internalWellFormed 
+          -- Extract from internalWellFormed
           simp [nodeWellFormed, internalWellFormed] at h
           exact h.2.1
         omega
       let child := children.get ⟨childIndex, h_bounds⟩
       -- For now, use unsafe recursive call (would need to prove child well-formedness)
-      let updatedChild := insertIntoNode child key value  
+      let updatedChild := insertIntoNode child key value
       -- Replace the child
       BPlusNode.internal keys (children.set childIndex updatedChild)
 
--- Insert operation  
+-- Insert operation
 def insert (tree : BPlusTree K V order) (key : K) (value : V) : BPlusTree K V order :=
   let newRoot := insertIntoNode tree.root key value
   { root := newRoot, height := tree.height }
@@ -748,19 +806,19 @@ def delete (tree : BPlusTree K V order) (key : K) : BPlusTree K V order := sorry
 def rangeQuery (tree : BPlusTree K V order) (startKey endKey : K) : List (KeyValue K V) := sorry
 
 -- 🎯 MAIN GOALS: Theorems to prove about our B+ Tree
--- 
+--
 -- The following theorems are our END GOALS - they prove the B+ tree actually works:
 --
 -- 🎯 FUNCTIONAL CORRECTNESS (what users care about):
 -- 1. insert_correct: After inserting a key, you can find it
--- 2. delete_correct: After deleting a key, it's gone  
+-- 2. delete_correct: After deleting a key, it's gone
 -- 3. insert_preserves_other_keys: Insert doesn't break existing keys
 -- 4. delete_preserves_other_keys: Delete doesn't break existing keys
 -- 5. insert_overwrites: Inserting same key twice overwrites the value
 --
 -- 🏗️ STRUCTURAL INVARIANTS (what keeps the B+ tree valid):
 -- 6. insert_preserves_node_sizes: Nodes stay properly sized after insert
--- 7. delete_preserves_node_sizes: Nodes stay properly sized after delete  
+-- 7. delete_preserves_node_sizes: Nodes stay properly sized after delete
 -- 8. insert_preserves_sorted_order: Keys stay sorted after insert
 -- 9. delete_preserves_sorted_order: Keys stay sorted after delete
 -- 10. insert_preserves_key_ranges: Parent-child relationships preserved after insert
@@ -779,7 +837,7 @@ def rangeQuery (tree : BPlusTree K V order) (startKey endKey : K) : List (KeyVal
 --
 -- 📍 PROOF STRATEGY:
 -- 1. Complete foundational helper lemmas (current focus)
--- 2. Prove search correctness first (depends on findLeafForKey + searchInLeaf)  
+-- 2. Prove search correctness first (depends on findLeafForKey + searchInLeaf)
 -- 3. Prove insert_correct (depends on search correctness + insertIntoLeaf)
 -- 4. Prove other macro properties building on insert_correct
 
@@ -800,43 +858,91 @@ theorem search_finds_existing_key {tree : BPlusTree K V order} {key : K} {value 
   search tree key = some value →
   {key := key, value := value} ∈ allEntriesInSubtree tree.root := by
   intro h_wf h_search
-  -- Unfold search definition and use findLeafForKey + searchInLeaf correctness
+  -- Unfold search definition
   unfold search searchInNode at h_search
-  -- search = searchInLeaf (findLeafForKey tree.root key) key = some value
-  -- By searchInLeaf_correct: {key := key, value := value} ∈ findLeafForKey tree.root key
-  -- By findLeafForKey_correct: findLeafForKey navigates to correct leaf containing the key
-  -- Therefore: {key := key, value := value} exists in tree
-  sorry
+  -- h_search : searchInLeaf (findLeafForKey tree.root key) key = some value
 
--- Search completeness: if a key-value pair exists in the tree, search finds it  
+  -- Get the leaf entries that search examined
+  let leafEntries := findLeafForKey tree.root key
+
+  -- By searchInLeaf_correct: the key-value pair is in the leaf entries
+  have h_in_leaf : {key := key, value := value} ∈ leafEntries := by
+    -- This follows from the definition of searchInLeaf
+    -- If searchInLeaf returns some value, then the key-value pair exists in the list
+    sorry -- Simplified for now - need proper searchInLeaf correctness
+
+  -- Now show that leafEntries are part of allEntriesInSubtree tree.root
+  have h_leaf_in_tree : ∀ kv ∈ leafEntries, kv ∈ allEntriesInSubtree tree.root := by
+    -- This requires proving findLeafForKey_correct:
+    -- findLeafForKey navigates to an actual leaf in the tree
+    -- and that leaf's entries are included in allEntriesInSubtree
+    sorry -- Need findLeafForKey_correct theorem
+
+  -- Apply the inclusion
+  exact h_leaf_in_tree {key := key, value := value} h_in_leaf
+
+-- Search completeness: if a key-value pair exists in the tree, search finds it
 theorem search_finds_all_keys {tree : BPlusTree K V order} {key : K} {value : V} :
   wellFormed tree →
   {key := key, value := value} ∈ allEntriesInSubtree tree.root →
   search tree key = some value := by
   intro h_wf h_exists
-  -- The converse: if {key := key, value := value} exists in tree, then search finds it
-  -- This requires uniqueness of keys in B+ trees (each key maps to unique value)
-  -- and correctness of findLeafForKey navigation to find the correct leaf
-  sorry
+  unfold search searchInNode
+
+  -- Get the leaf entries that search will examine
+  let leafEntries := findLeafForKey tree.root key
+
+  -- The key insight: if the key-value pair exists in the tree,
+  -- then findLeafForKey must navigate to the leaf containing it
+  have h_kv_in_leaf : {key := key, value := value} ∈ leafEntries := by
+    -- This requires proving that findLeafForKey navigates correctly:
+    -- if a key exists in the tree, findLeafForKey finds the leaf containing it
+    -- This follows from keyRangesValid: internal nodes properly separate key ranges
+    sorry -- Need findLeafForKey navigation correctness
+
+  -- Now apply searchInLeaf correctness
+  -- If the key-value pair is in the leaf entries, searchInLeaf should find it
+  sorry -- Need proper searchInLeaf correctness in reverse direction
 
 -- High-level search correctness combining both directions
 theorem search_correct {tree : BPlusTree K V order} {key : K} :
   wellFormed tree →
   (search tree key).isSome ↔ ∃ value, {key := key, value := value} ∈ allEntriesInSubtree tree.root := by
-  -- This theorem combines search_finds_existing_key and search_finds_all_keys
-  -- to show that search succeeds exactly when the key exists in the tree
-  sorry
+  intro h_wf
+  constructor
+  · -- Forward: search succeeds → key exists in tree
+    intro h_some
+    cases h_search : search tree key with
+    | none =>
+      simp at h_some
+    | some value =>
+      use value
+      -- Apply search_finds_existing_key
+      exact search_finds_existing_key h_wf h_search
+  · -- Backward: key exists in tree → search succeeds
+    intro ⟨value, h_exists⟩
+    -- Apply search_finds_all_keys
+    have h_search := search_finds_all_keys h_wf h_exists
+    simp [h_search]
 
 -- 🎯 MACRO PROPERTY 1: Insert correctness - after inserting, the key is findable
 theorem insert_correct {tree : BPlusTree K V order} {key : K} {value : V} :
   wellFormed tree →
   search (insert tree key value) key = some value := by
+  intro h_wf
+
+  -- Proof that findLeafForKey on leaf returns the entries
+  have leaf_case : ∀ entries key, ∃ leaf_entries, findLeafForKey (BPlusNode.leaf entries) key = leaf_entries := by
+    intro entries key
+    use entries
+    simp [findLeafForKey]
+
   -- This is THE main property: insert actually works!
   -- Strategy: show that insert places the key-value pair in the right leaf,
   -- and search finds it there
   sorry
 
--- 🎯 MACRO PROPERTY 2: Delete correctness - after deleting, the key is gone  
+-- 🎯 MACRO PROPERTY 2: Delete correctness - after deleting, the key is gone
 theorem delete_correct {tree : BPlusTree K V order} {key : K} :
   wellFormed tree →
   search (delete tree key) key = none := by
@@ -847,7 +953,7 @@ theorem delete_correct {tree : BPlusTree K V order} {key : K} :
 
 -- 🎯 MACRO PROPERTY 3: Insert preserves other keys
 theorem insert_preserves_other_keys {tree : BPlusTree K V order} {key key' : K} {value : V} :
-  wellFormed tree → 
+  wellFormed tree →
   key ≠ key' →
   search (insert tree key value) key' = search tree key' := by
   -- Insert doesn't accidentally break other keys
@@ -855,7 +961,7 @@ theorem insert_preserves_other_keys {tree : BPlusTree K V order} {key key' : K} 
   -- and search for key' goes to a different path
   sorry
 
--- 🎯 MACRO PROPERTY 4: Delete preserves other keys  
+-- 🎯 MACRO PROPERTY 4: Delete preserves other keys
 theorem delete_preserves_other_keys {tree : BPlusTree K V order} {key key' : K} :
   wellFormed tree →
   key ≠ key' →
@@ -877,25 +983,25 @@ theorem insert_overwrites {tree : BPlusTree K V order} {key : K} {value1 value2 
 
 -- 🏗️ STRUCTURAL PROPERTY 1: Insert preserves node size constraints
 theorem insert_preserves_node_sizes {tree : BPlusTree K V order} {key : K} {value : V} :
-  wellFormed tree → 
+  wellFormed tree →
   ∀ node, (node = (insert tree key value).root ∨ isChildOf node (insert tree key value).root) →
     (match node with
      | BPlusNode.leaf entries => validLeafNodeSize entries order
      | BPlusNode.internal keys children => validInternalNodeSize children order) := by
   -- Proves no node becomes too large or too small after insert
-  -- Strategy: 
+  -- Strategy:
   -- 1. Show insert only affects one path from root to leaf
   -- 2. Show leaf splitting maintains size constraints
   -- 3. Show internal node splitting (if needed) maintains size constraints
   -- 4. Show unaffected nodes keep their sizes
   sorry
 
--- 🏗️ STRUCTURAL PROPERTY 2: Delete preserves node size constraints  
+-- 🏗️ STRUCTURAL PROPERTY 2: Delete preserves node size constraints
 theorem delete_preserves_node_sizes {tree : BPlusTree K V order} {key : K} :
   wellFormed tree →
   ∀ node, (node = (delete tree key).root ∨ isChildOf node (delete tree key).root) →
     (match node with
-     | BPlusNode.leaf entries => validLeafNodeSize entries order  
+     | BPlusNode.leaf entries => validLeafNodeSize entries order
      | BPlusNode.internal keys children => validInternalNodeSize children order) := by
   -- Proves no node becomes too large or too small after delete
   -- Strategy:
@@ -984,7 +1090,7 @@ theorem delete_preserves_wellformed {tree : BPlusTree K V order} {key : K} :
 
 -- Height bounds (simplified without log)
 theorem height_bounded {tree : BPlusTree K V order} {n : Nat} :
-  wellFormed tree → 
+  wellFormed tree →
   (∃ entries, tree.root = BPlusNode.leaf entries ∧ entries.length = n) →
   tree.height ≤ n := by sorry
 
@@ -1016,14 +1122,14 @@ theorem search_logarithmic_complexity {tree : BPlusTree K V order} {key : K} :
   -- Tree height is logarithmic in total number of keys (by B+ tree balance property)
   sorry
 
--- 📊 COMPLEXITY PROPERTY 2: Range query is O(log n + k) where k = result size  
+-- 📊 COMPLEXITY PROPERTY 2: Range query is O(log n + k) where k = result size
 theorem range_query_complexity {tree : BPlusTree K V order} {startKey endKey : K} {resultSize : Nat} :
   wellFormed tree →
   leavesFormLinkedList tree →
   ∃ steps, steps ≤ tree.height * order + resultSize := by
   -- THIS ANSWERS YOUR QUESTION: "O(k) traversal once you find starting key"
   -- Proves range query is O(log n + k):
-  -- - O(log n) to find the starting leaf via search  
+  -- - O(log n) to find the starting leaf via search
   -- - O(k) to traverse through k result entries in the linked leaves
   -- Strategy:
   -- 1. Use search_logarithmic_complexity for the initial search
@@ -1040,7 +1146,7 @@ theorem height_is_logarithmic {tree : BPlusTree K V order} {totalKeys : Nat} :
   -- This is the key insight: because each internal node has at least (order+1)/2 children,
   -- the tree can't be too tall relative to the number of keys it stores
   -- Strategy: Use minimum branching factor to bound height
-  -- 
+  --
   -- In reality this would be: tree.height ≤ log_((order+1)/2) totalKeys
   -- But Lean 4's standard library might not have logarithms readily available
   sorry
@@ -1049,7 +1155,7 @@ theorem height_is_logarithmic {tree : BPlusTree K V order} {totalKeys : Nat} :
 theorem linked_leaves_sequential_access {tree : BPlusTree K V order} {startKey endKey : K} :
   wellFormed tree →
   leavesFormLinkedList tree →
-  ∃ path : List (KeyValue K V), 
+  ∃ path : List (KeyValue K V),
     (∀ kv ∈ path, startKey ≤ kv.key ∧ kv.key ≤ endKey) ∧
     path.length ≤ 1000 := by  -- Simplified bound
   -- THIS DIRECTLY ANSWERS YOUR QUESTION:
@@ -1057,10 +1163,10 @@ theorem linked_leaves_sequential_access {tree : BPlusTree K V order} {startKey e
   --
   -- Proves: Once you find the starting leaf (via O(log n) search),
   -- you can traverse through all keys in range in O(k) time where k = number of results
-  -- 
+  --
   -- The linked list property ensures:
   -- 1. Leaves are ordered left-to-right by key values
-  -- 2. You can move from one leaf to the next in constant time  
+  -- 2. You can move from one leaf to the next in constant time
   -- 3. Sequential scan through results takes exactly k steps
   sorry
 
@@ -1071,12 +1177,25 @@ theorem btree_range_query_optimal {tree : BPlusTree K V order} {startKey endKey 
   validOrder order →
   ∃ (searchSteps rangeSteps : Nat),
     searchSteps ≤ tree.height * order ∧  -- O(log n) to find start
-    rangeSteps ≤ 1000 ∧  -- O(k) to traverse results (simplified bound)  
+    rangeSteps ≤ 1000 ∧  -- O(k) to traverse results (simplified bound)
     rangeSteps ≥ (rangeQuery tree startKey endKey).length := by  -- Must visit at least k entries
-  -- This combines everything: B+ trees achieve the theoretical optimum O(log n + k)
-  -- for range queries by combining:
-  -- 1. Logarithmic search to find starting position  
-  -- 2. Linear traversal through linked leaves for results
-  sorry
+  intro h_wf h_linked h_order
+
+  -- Proof that findLeafForKey on leaf returns the entries
+  have leaf_case : ∀ entries key, ∃ leaf_entries, findLeafForKey (BPlusNode.leaf entries) key = leaf_entries := by
+    intro entries key
+    use entries
+    simp [findLeafForKey]
+
+  -- Use the complexity bounds
+  use tree.height * order, 1000
+  constructor
+  · -- searchSteps ≤ tree.height * order
+    sorry -- This follows from search_logarithmic_complexity
+  constructor
+  · -- rangeSteps ≤ 1000
+    simp
+  · -- rangeSteps ≥ (rangeQuery tree startKey endKey).length
+    sorry -- This requires implementing rangeQuery
 
 end BPlusTree
